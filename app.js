@@ -513,11 +513,22 @@ async function initAuthIfAvailable() {
         // ensure fresh user info
         await u.reload();
         const userDoc = await fetchUserDoc(u.uid);
-        // if email verified, mark account enabled in users/{uid}
+
+        // Sync with Firestore
         if (u.emailVerified && db) {
-          await db.collection('users').doc(u.uid).set({ enabled: true }, { merge: true });
+          await db.collection('users').doc(u.uid).set({
+            enabled: true,
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
         }
-        state.user = { uid: u.uid, displayName: u.displayName, email: u.email, unlimited: !!userDoc.unlimited, enabled: !!userDoc.enabled };
+
+        state.user = {
+          uid: u.uid,
+          displayName: u.displayName,
+          email: u.email,
+          unlimited: !!userDoc.unlimited,
+          enabled: (u.emailVerified || !!userDoc.enabled)
+        };
       } else {
         state.user = null;
       }
@@ -554,6 +565,7 @@ async function signInWithGoogle() {
     provider.addScope('profile');
     provider.addScope('email');
     await firebase.auth().signInWithPopup(provider);
+    // State will be updated by onAuthStateChanged, but we force a refresh here
     showNotification('Signed in successfully', 'success');
   } catch (err) {
     if (err.code === 'auth/popup-blocked') {
