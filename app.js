@@ -531,8 +531,35 @@ if (DOM.signOutBtn) DOM.signOutBtn.addEventListener('click', () => signOutUser()
 
 // Initialize auth on load
 window.addEventListener('load', () => {
-  initAuthIfAvailable().then(() => _updateAttemptsUI());
+  initAuthIfAvailable().then(() => {
+    _updateAttemptsUI();
+    _updateAuthUI();
+    layoutResponsive();
+  });
 });
+
+// Re-layout on resize (responsive adjustments)
+function layoutResponsive() {
+  try {
+    const w = window.innerWidth;
+    // Example: small devices - ensure decrypt attempts are visible and moved if needed
+    if (w <= 640) {
+      if (DOM.decryptAttempts) {
+        DOM.decryptAttempts.style.textAlign = 'right';
+        DOM.decryptAttempts.style.display = 'block';
+      }
+      document.body.classList.add('mobile');
+    } else {
+      if (DOM.decryptAttempts) {
+        DOM.decryptAttempts.style.textAlign = '';
+        DOM.decryptAttempts.style.display = 'block';
+      }
+      document.body.classList.remove('mobile');
+    }
+  } catch (e) { /* ignore */ }
+}
+
+window.addEventListener('resize', () => layoutResponsive());
 
 // ============================================================================
 // EVENT LISTENERS - FILE OPERATIONS

@@ -349,6 +349,8 @@
         <label class="mt">Decryption Parameters</label>
         <textarea id="decInfo" spellcheck="false" readonly placeholder="Decryption parameters and result will appear here..."></textarea>
 
+        <div id="decryptAttempts" class="meta">Attempts left: 5</div>
+
         <div class="grid2 mt">
           <button class="btn secondary" id="downloadDecBtn" type="button" disabled>Download decrypted file</button>
           <button class="btn secondary" id="useAsCurrentBtn" type="button" disabled>Use as current file</button>
@@ -445,7 +447,7 @@
   <div class="modal" id="accountModal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="panel">
       <h4>Account & Quota</h4>
-      <p id="accountInfo">Loading account info...</p>
+      <pre id="accountInfo">Loading account info...</pre>
       <div style="margin-top:10px">
         <button class="btn" id="requestUnlimitedBtn" type="button">Request Unlimited Access</button>
         <button class="btn secondary" id="accountModalClose" type="button">Close</button>
