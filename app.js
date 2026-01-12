@@ -80,7 +80,8 @@ const DOM = {
   authEmailSignUp: document.getElementById("authEmailSignUp"),
   authEmailSignIn: document.getElementById("authEmailSignIn"),
   authResendVerification: document.getElementById("authResendVerification"),
-  authMessage: document.getElementById("authMessage")
+  authMessage: document.getElementById("authMessage"),
+  checkVerificationBtn: document.getElementById("checkVerificationBtn")
 };
 
 // State
@@ -488,7 +489,7 @@ async function initAuthIfAvailable() {
         if (u.emailVerified && db) {
           await db.collection('users').doc(u.uid).set({ enabled: true }, { merge: true });
         }
-        state.user = { uid: u.uid, displayName: u.displayName, email: u.email, unlimited: !!userDoc.unlimited };
+        state.user = { uid: u.uid, displayName: u.displayName, email: u.email, unlimited: !!userDoc.unlimited, enabled: !!userDoc.enabled };
       } else {
         state.user = null;
       }
@@ -595,12 +596,23 @@ function _updateAuthUI() {
       if (DOM.miniName) DOM.miniName.textContent = state.user.displayName || state.user.email;
       if (DOM.miniQuota) DOM.miniQuota.textContent = state.user.unlimited ? 'Unlimited' : `Attempts left: ${state.user.remainingAttempts ?? getAttemptsLeft()}`;
     }
+
+    // Check verification button: show if signed-in and not enabled
+    if (DOM.checkVerificationBtn) {
+      if (state.user && !state.user.enabled) {
+        DOM.checkVerificationBtn.style.display = 'inline-flex';
+      } else {
+        DOM.checkVerificationBtn.style.display = 'none';
+      }
+    }
+
   } else {
     if (DOM.userBadge) DOM.userBadge.style.display = 'none';
     if (DOM.signInBtn) DOM.signInBtn.style.display = 'inline-flex';
     if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'none';
     if (DOM.accountBtn) DOM.accountBtn.style.display = 'none';
     if (DOM.miniAccount) DOM.miniAccount.style.display = 'none';
+    if (DOM.checkVerificationBtn) DOM.checkVerificationBtn.style.display = 'none';
   }
 }
 
@@ -733,6 +745,29 @@ if (DOM.requestUnlimitedBtn) DOM.requestUnlimitedBtn.addEventListener('click', a
     showNotification('Request submitted — admin will review', 'success');
   } catch (err) {
     showNotification(`Request failed: ${err.message}`, 'error');
+  }
+});
+
+// Check verification button
+if (DOM.checkVerificationBtn) DOM.checkVerificationBtn.addEventListener('click', async () => {
+  if (!firebase || !firebase.auth) { showNotification('Auth not configured', 'warning'); return; }
+  const u = firebase.auth().currentUser;
+  if (!u) { showNotification('Sign in first to check verification', 'warning'); return; }
+  try {
+    await u.reload();
+    if (u.emailVerified) {
+      if (db) await db.collection('users').doc(u.uid).set({ enabled: true }, { merge: true });
+      showNotification('Email verified — account activated', 'success');
+      // refresh state
+      const userDoc = await fetchUserDoc(u.uid);
+      state.user.enabled = !!userDoc.enabled;
+      _updateAuthUI();
+      _updateAttemptsUI();
+    } else {
+      showNotification('Email not yet verified. Check your inbox or click Resend verification.', 'warning');
+    }
+  } catch (err) {
+    showNotification(`Check failed: ${err.message}`, 'error');
   }
 });
 
