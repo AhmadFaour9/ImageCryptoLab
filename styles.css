@@ -403,9 +403,30 @@ textarea:focus {
 .auth button { font-size: 13px; padding: 8px 10px; }
 .auth .userBadge { color: var(--muted); font-size: 13px; }
 
-#decryptAttempts { color: var(--muted); font-size: 13px; margin-top:8px; }
+#decryptAttempts { color: var(--muted); font-size: 13px; margin-top:8px; transition: transform .28s ease, color .28s ease, opacity .28s ease; }
 #decryptAttempts.warn { color: var(--warning); font-weight:700; }
 #decryptAttempts.blocked { color: var(--danger); font-weight:700; }
+
+/* Pulse animation when attempts change */
+@keyframes pulseScale {
+  0% { transform: scale(1); opacity: 1; }
+  25% { transform: scale(1.06); opacity: 1; }
+  50% { transform: scale(0.98); opacity: 0.95; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pulse {
+  animation: pulseScale .48s cubic-bezier(.2,.8,.2,1);
+}
+
+/* Small pop for mini quota updates */
+@keyframes popScale {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.mini-pop {
+  animation: popScale .36s ease-out;
+}
 
 .modal {
   position: fixed;

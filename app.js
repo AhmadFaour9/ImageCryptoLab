@@ -344,15 +344,38 @@ function getBlockedUntil() {
 function _updateAttemptsUI() {
   if (!DOM.decryptAttempts) return;
   const left = getAttemptsLeft();
+  // Add pulse animation for change
+  DOM.decryptAttempts.classList.remove('pulse');
+  void DOM.decryptAttempts.offsetWidth; // trigger reflow
+
   if (left > 0) {
     DOM.decryptAttempts.textContent = `Attempts left: ${left}`;
+    DOM.decryptAttempts.classList.remove('blocked');
+    DOM.decryptAttempts.classList.remove('warn');
+    if (left <= 2) DOM.decryptAttempts.classList.add('warn');
     DOM.decryptBtn.disabled = false;
   } else {
     const until = getBlockedUntil();
     const remainingMs = Math.max(0, until - Date.now());
     const hours = Math.ceil(remainingMs / (60 * 60 * 1000));
     DOM.decryptAttempts.textContent = `No attempts left. ${hours} hour(s) until reset.`;
+    DOM.decryptAttempts.classList.add('blocked');
     DOM.decryptBtn.disabled = true;
+  }
+
+  // Visual pulse when updated
+  DOM.decryptAttempts.classList.add('pulse');
+
+  // Update mini panel quota if visible
+  if (DOM.miniQuota) {
+    if (state.user && state.user.unlimited) {
+      DOM.miniQuota.textContent = 'Unlimited';
+    } else {
+      DOM.miniQuota.classList.remove('mini-pop');
+      DOM.miniQuota.textContent = `Attempts left: ${getAttemptsLeft()}`;
+      void DOM.miniQuota.offsetWidth; // reflow to restart animation
+      DOM.miniQuota.classList.add('mini-pop');
+    }
   }
 }
 
@@ -410,6 +433,37 @@ async function initAuthIfAvailable() {
       }
       return { id: uid, ...snap.data() };
     }
+
+    // Admin helper: fetch pending requests if user has admin claim
+    async function fetchPendingRequests() {
+      if (!db) return [];
+      try {
+        const token = await firebase.auth().currentUser.getIdTokenResult();
+        if (!token.claims || !token.claims.admin) return [];
+        const q = await db.collection('requests').where('status', '==', 'pending').get();
+        const out = [];
+        q.forEach(d => out.push({ id: d.id, ...d.data() }));
+        return out;
+      } catch (err) {
+        console.warn('fetchPendingRequests failed', err);
+        return [];
+      }
+    }
+
+    // Admin helper: approve request and grant unlimited
+    async function approveRequest(uid) {
+      if (!db) throw new Error('Firestore unavailable');
+      // Set the users/{uid}.unlimited = true and mark request as approved
+      const userRef = db.collection('users').doc(uid);
+      const reqRef = db.collection('requests').doc(uid);
+      await userRef.set({ unlimited: true }, { merge: true });
+      await reqRef.set({ status: 'approved', reviewedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      return true;
+    }
+
+    // Expose admin helpers
+    window._icl_fetchPendingRequests = fetchPendingRequests;
+    window._icl_approveRequest = approveRequest;
 
     firebase.auth().onAuthStateChanged(async (u) => {
       if (u) {
@@ -473,11 +527,18 @@ function _updateAuthUI() {
     if (DOM.signInBtn) DOM.signInBtn.style.display = 'none';
     if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'inline-flex';
     if (DOM.accountBtn) DOM.accountBtn.style.display = 'inline-flex';
+    // Mini account
+    if (DOM.miniAccount) {
+      DOM.miniAccount.style.display = 'flex';
+      if (DOM.miniName) DOM.miniName.textContent = state.user.displayName || state.user.email;
+      if (DOM.miniQuota) DOM.miniQuota.textContent = state.user.unlimited ? 'Unlimited' : `Attempts left: ${getAttemptsLeft()}`;
+    }
   } else {
     if (DOM.userBadge) DOM.userBadge.style.display = 'none';
     if (DOM.signInBtn) DOM.signInBtn.style.display = 'inline-flex';
     if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'none';
     if (DOM.accountBtn) DOM.accountBtn.style.display = 'none';
+    if (DOM.miniAccount) DOM.miniAccount.style.display = 'none';
   }
 }
 
@@ -493,12 +554,55 @@ function hideAuthModal() {
   DOM.authModal.setAttribute('aria-hidden', 'true');
 }
 
-function showAccountModal() {
+async function showAccountModal() {
   if (!DOM.accountModal) return;
   // populate info
   const attemptsLeft = getAttemptsLeft();
   const unlimited = state.user?.unlimited ? 'Yes' : 'No';
   if (DOM.accountInfo) DOM.accountInfo.textContent = `User: ${state.user?.displayName || state.user?.email}\nUnlimited: ${unlimited}\nAttempts left: ${attemptsLeft}`;
+
+  // Load admin preview if admin
+  try {
+    const pending = await (window._icl_fetchPendingRequests ? window._icl_fetchPendingRequests() : Promise.resolve([]));
+    if (pending && pending.length > 0) {
+      if (DOM.adminPreview) DOM.adminPreview.style.display = 'block';
+      if (DOM.adminList) {
+        DOM.adminList.innerHTML = '';
+        pending.forEach(req => {
+          const row = document.createElement('div');
+          row.style.display = 'flex'; row.style.justifyContent = 'space-between'; row.style.gap='8px'; row.style.alignItems='center'; row.style.padding='6px 0';
+          row.innerHTML = `<div style="flex:1"><strong>${req.uid || req.id}</strong> — requested at ${new Date(req.requestedAt?.toDate ? req.requestedAt.toDate() : (req.requestedAt||'')).toLocaleString()}</div>`;
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.textContent = 'Approve';
+          btn.addEventListener('click', async () => {
+            try {
+              await window._icl_approveRequest(req.uid || req.id);
+              showNotification('Request approved', 'success');
+              // refresh list
+              const refreshed = await window._icl_fetchPendingRequests();
+              if (refreshed.length === 0) {
+                DOM.adminList.textContent = 'No pending requests';
+              } else {
+                // simple refresh
+                showAccountModal();
+              }
+            } catch (err) {
+              showNotification(`Approve failed: ${err.message}`, 'error');
+            }
+          });
+          row.appendChild(btn);
+          DOM.adminList.appendChild(row);
+        });
+      }
+    } else {
+      if (DOM.adminPreview) DOM.adminPreview.style.display = 'none';
+      if (DOM.adminList) DOM.adminList.textContent = 'No pending requests';
+    }
+  } catch (err) {
+    console.warn('admin preview failed', err);
+  }
+
   DOM.accountModal.classList.add('show');
   DOM.accountModal.setAttribute('aria-hidden', 'false');
 }
@@ -543,7 +647,8 @@ function layoutResponsive() {
   try {
     const w = window.innerWidth;
     // Example: small devices - ensure decrypt attempts are visible and moved if needed
-    if (w <= 640) {
+    const isNarrow = w <= 640;
+    if (isNarrow) {
       if (DOM.decryptAttempts) {
         DOM.decryptAttempts.style.textAlign = 'right';
         DOM.decryptAttempts.style.display = 'block';
@@ -555,6 +660,17 @@ function layoutResponsive() {
         DOM.decryptAttempts.style.display = 'block';
       }
       document.body.classList.remove('mobile');
+    }
+
+    // mini account panel visibility adjustments
+    if (DOM.miniAccount) {
+      if (isNarrow && state.user) {
+        DOM.miniAccount.style.display = 'flex';
+      } else if (!isNarrow) {
+        DOM.miniAccount.style.display = 'flex';
+      } else {
+        DOM.miniAccount.style.display = 'none';
+      }
     }
   } catch (e) { /* ignore */ }
 }

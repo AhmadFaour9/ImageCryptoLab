@@ -34,6 +34,13 @@
     </div>
     <div class="pill">Runs 100% in your browser — suitable for GitHub Pages</div>
     <div class="auth">
+      <div id="miniAccount" style="display:none; align-items:center; gap:8px;">
+        <img id="miniAvatar" src="/assets/logo.svg" alt="avatar" style="height:28px; width:28px; border-radius:6px;" />
+        <div style="display:flex; flex-direction:column; align-items:flex-start;">
+          <small id="miniName" style="font-size:12px; color:var(--muted);"></small>
+          <small id="miniQuota" style="font-size:11px; color:var(--muted);"></small>
+        </div>
+      </div>
       <button class="btn" id="signInBtn" type="button">Sign in (Google)</button>
       <button class="btn secondary" id="signOutBtn" type="button" style="display:none;">Sign out</button>
       <button class="btn secondary" id="accountBtn" type="button" style="display:none;">Account</button>
@@ -451,6 +458,11 @@
       <div style="margin-top:10px">
         <button class="btn" id="requestUnlimitedBtn" type="button">Request Unlimited Access</button>
         <button class="btn secondary" id="accountModalClose" type="button">Close</button>
+      </div>
+      <hr style="margin:12px 0;" />
+      <div id="adminPreview" style="display:none;">
+        <h4>Pending Requests (Admin)</h4>
+        <div id="adminList">None</div>
       </div>
     </div>
   </div>
