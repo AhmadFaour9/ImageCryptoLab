@@ -633,38 +633,44 @@ async function signOutUser() {
 }
 
 function _updateAuthUI() {
-  if (state.user) {
+  const isAuth = !!state.user;
+
+  // Toggle buttons
+  if (DOM.signInBtn) DOM.signInBtn.style.display = isAuth ? 'none' : 'inline-flex';
+  if (DOM.signOutBtn) DOM.signOutBtn.style.display = isAuth ? 'inline-flex' : 'none';
+  if (DOM.accountBtn) DOM.accountBtn.style.display = isAuth ? 'inline-flex' : 'none';
+
+  if (isAuth) {
+    const name = state.user.displayName || state.user.email.split('@')[0];
+
+    // Update Badge
     if (DOM.userBadge) {
-      DOM.userBadge.style.display = 'block';
-      DOM.userBadge.textContent = `${state.user.displayName || state.user.email}`;
-    }
-    if (DOM.signInBtn) DOM.signInBtn.style.display = 'none';
-    if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'inline-flex';
-    if (DOM.accountBtn) DOM.accountBtn.style.display = 'inline-flex';
-    // Mini account
-    if (DOM.miniAccount) {
-      DOM.miniAccount.style.display = 'flex';
-      if (DOM.miniName) DOM.miniName.textContent = state.user.displayName || state.user.email;
-      if (DOM.miniQuota) DOM.miniQuota.textContent = state.user.unlimited ? 'Unlimited' : `Attempts left: ${state.user.remainingAttempts ?? getAttemptsLeft()}`;
+      DOM.userBadge.style.display = 'flex';
+      DOM.userBadge.innerHTML = `<i data-lucide="user" class="i-sm"></i> <span>${name}</span>`;
     }
 
-    // Check verification button: show if signed-in and not enabled
-    if (DOM.checkVerificationBtn) {
-      if (state.user && !state.user.enabled) {
-        DOM.checkVerificationBtn.style.display = 'inline-flex';
-      } else {
-        DOM.checkVerificationBtn.style.display = 'none';
+    // Mini account panel
+    if (DOM.miniAccount) {
+      DOM.miniAccount.style.display = 'flex';
+      if (DOM.miniName) DOM.miniName.textContent = name;
+      if (DOM.miniQuota) {
+        const quotaText = state.user.unlimited ? 'Unlimited Access ✨' : `Quota: ${state.user.remainingAttempts ?? getAttemptsLeft()} left`;
+        DOM.miniQuota.textContent = quotaText;
       }
     }
 
+    // Check verification
+    if (DOM.checkVerificationBtn) {
+      DOM.checkVerificationBtn.style.display = (!state.user.enabled) ? 'inline-flex' : 'none';
+    }
   } else {
     if (DOM.userBadge) DOM.userBadge.style.display = 'none';
-    if (DOM.signInBtn) DOM.signInBtn.style.display = 'inline-flex';
-    if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'none';
-    if (DOM.accountBtn) DOM.accountBtn.style.display = 'none';
     if (DOM.miniAccount) DOM.miniAccount.style.display = 'none';
     if (DOM.checkVerificationBtn) DOM.checkVerificationBtn.style.display = 'none';
   }
+
+  // Refresh icons for new HTML
+  if (window.lucide) lucide.createIcons();
 }
 
 function showAuthModal() {

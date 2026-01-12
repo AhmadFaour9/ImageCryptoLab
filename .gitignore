@@ -4,6 +4,7 @@ dist/
 *.min.js
 .DS_Store
 .env
+firebase-local.js
 .env.local
 .env.*.local
 *.log
