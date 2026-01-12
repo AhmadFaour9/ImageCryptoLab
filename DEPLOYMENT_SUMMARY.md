@@ -1,5 +1,8 @@
 # ImageCryptoLab - Deployment & Testing Complete ✅
 
+**Author:** Ahmad Faour  
+**© 2026 Ahmad Faour — All rights reserved.**
+
 **Date**: January 12, 2026  
 **Status**: Production Ready  
 **Version**: 2.0.0

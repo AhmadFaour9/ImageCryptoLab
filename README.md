@@ -2,6 +2,9 @@
 
 **Version 2.0.0** | Production Ready ✅
 
+**Author:** Ahmad Faour  
+**© 2026 Ahmad Faour — All rights reserved.**
+
 A lightweight, client-side web application for image processing, encoding, and encryption with 100% browser-based processing suitable for GitHub Pages deployment.
 
 ## Features

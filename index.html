@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="author" content="Ahmad Faour" />
   <title>ImageCryptoLab — Convert • Base64/Hex • AES/DES Encrypt/Decrypt</title>
+  <link rel="icon" href="/assets/logo.svg" />
   <link rel="stylesheet" href="./styles.css" />
   <!-- CryptoJS (AES/DES) via CDN -->
   <script defer src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
@@ -12,10 +14,11 @@
 <body>
   <header class="wrap header">
     <div class="brand">
-      <div class="logo" aria-hidden="true">🧪</div>
+      <div class="logo" aria-hidden="false"><img src="/assets/logo.svg" alt="ImageCryptoLab logo" style="height:40px;" /></div>
       <div>
         <h1>ImageCryptoLab</h1>
-        <p class="sub">Convert images • Extract Base64/Hex • Encrypt/Decrypt with AES or DES (client‑side)</p>
+        <p class="sub">Convert images • Extract Base64/Hex • Encrypt/Decrypt with AES, DES, TripleDES (client‑side)</p>
+        <p class="meta">Author: <strong>Ahmad Faour</strong> — © Ahmad Faour 2026. All rights reserved.</p>
       </div>
     </div>
     <div class="pill">Runs 100% in your browser — suitable for GitHub Pages</div>
@@ -375,6 +378,19 @@
     </section>
 
     <section class="card">
+      <h2>About & Features</h2>
+      <p>This project is developed and maintained by <strong>Ahmad Faour</strong>. Key features include:</p>
+      <ul>
+        <li>Image format conversion: PNG, JPEG, WebP (Canvas-based)</li>
+        <li>Base64 / Hex encoding and decoding with download support</li>
+        <li>Client-side encryption: AES, DES, TripleDES with configurable parameters</li>
+        <li>Preview, download, and round-trip decryption support</li>
+        <li>Evaluation framework with automated CI integration</li>
+      </ul>
+      <p class="hint">Want more features? Open an issue on GitHub or contact the author.</p>
+    </section>
+
+    <section class="card">
       <h2>3) Share & Deploy</h2>
       <div class="notice">
         ✅ <strong>Already deployed!</strong> This app runs 100% client-side (in your browser).
@@ -386,7 +402,13 @@
     </section>
 
     <footer class="footer">
-      <span>Made for GitHub Pages • Vanilla HTML/CSS/JS • CryptoJS AES/DES</span>
+      <div class="footerLeft">
+        <span>Made for GitHub Pages • Vanilla HTML/CSS/JS • CryptoJS AES/DES</span>
+      </div>
+      <div class="footerRight">
+        <small>© 2026 Ahmad Faour — All rights reserved.</small><br/>
+        <small>Author: Ahmad Faour — <a href="https://github.com/AhmadFaour9">GitHub</a></small>
+      </div>
     </footer>
   </main>
 </body>
