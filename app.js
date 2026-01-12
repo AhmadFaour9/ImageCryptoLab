@@ -288,6 +288,11 @@ function setFileState(file, bytes) {
     
     DOM.fileMeta.textContent = `${state.currentName} (${(bytes.length / 1024).toFixed(2)}KB)`;
     DOM.downloadOriginalBtn.disabled = false;
+    DOM.convertBtn.disabled = false;
+    DOM.makeBase64Btn.disabled = false;
+    DOM.makeHexBtn.disabled = false;
+    DOM.encryptBtn.disabled = false;
+    DOM.applyResizeBtn.disabled = false;
     
     showNotification(`Loaded: ${state.currentName}`, 'success', 2000);
   } catch (err) {
