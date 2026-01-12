@@ -41,7 +41,7 @@ To protect against mass guessing or brute-force attempts on decrypt operations, 
 - **Signed-in users** are also limited to **5 daily decrypt attempts** (tracked per user in localStorage for this demo). For production, use a server-side store (e.g., Firestore) for reliable enforcement.
 - A successful decryption will **reset** the attempt counter for that user/session.
 
-To enable Google Sign-in for your deployment, see the `AUTH` section below and follow the Firebase setup steps.
+To enable sign-in for your deployment, see the `AUTH` section below and follow the Firebase setup steps. You can enable either **Google** sign-in or **Email/Password** sign-in (or both).
 
 
 ## Browser Support
@@ -109,7 +109,7 @@ Steps:
 </script>
 ```
 
-4. Deploy your site. The app will dynamically load Firebase SDKs and enable Google Sign-in. When a user signs in, their quota will be tied to their account.
+4. Deploy your site. The app will dynamically load Firebase SDKs and enable sign-in methods you enabled in Firebase Console. For **Email/Password** sign-up you must enable the 'Email/Password' provider under Authentication → Sign-in method. The app will send a verification email after sign-up; users must confirm their email to activate their account. When a user signs in, their quota will be tied to their account.
 
 ## Firestore: quota and unlimited access
 For reliable enforcement and to provide true "unlimited" accounts, configure Firestore and the `users` collection. The app will:

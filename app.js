@@ -71,7 +71,16 @@ const DOM = {
   accountModal: document.getElementById("accountModal"),
   accountModalClose: document.getElementById("accountModalClose"),
   accountInfo: document.getElementById("accountInfo"),
-  requestUnlimitedBtn: document.getElementById("requestUnlimitedBtn")
+  requestUnlimitedBtn: document.getElementById("requestUnlimitedBtn"),
+  // Email auth fields
+  showEmailFormBtn: document.getElementById("showEmailFormBtn"),
+  emailAuthForm: document.getElementById("emailAuthForm"),
+  authEmail: document.getElementById("authEmail"),
+  authPassword: document.getElementById("authPassword"),
+  authEmailSignUp: document.getElementById("authEmailSignUp"),
+  authEmailSignIn: document.getElementById("authEmailSignIn"),
+  authResendVerification: document.getElementById("authResendVerification"),
+  authMessage: document.getElementById("authMessage")
 };
 
 // State
@@ -472,7 +481,13 @@ async function initAuthIfAvailable() {
 
     firebase.auth().onAuthStateChanged(async (u) => {
       if (u) {
+        // ensure fresh user info
+        await u.reload();
         const userDoc = await fetchUserDoc(u.uid);
+        // if email verified, mark account enabled in users/{uid}
+        if (u.emailVerified && db) {
+          await db.collection('users').doc(u.uid).set({ enabled: true }, { merge: true });
+        }
         state.user = { uid: u.uid, displayName: u.displayName, email: u.email, unlimited: !!userDoc.unlimited };
       } else {
         state.user = null;
@@ -510,6 +525,48 @@ async function signInWithGoogle() {
   }
 }
 
+// Email/password signup
+async function signUpWithEmail(email, password) {
+  if (typeof firebase === 'undefined') { throw new Error('Auth not configured'); }
+  try {
+    const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    // send verification email
+    if (cred && cred.user) {
+      await cred.user.sendEmailVerification();
+      // create a minimal user doc
+      if (db) await db.collection('users').doc(cred.user.uid).set({ unlimited: false, enabled: false, email: email }, { merge: true });
+      return { ok: true, message: 'Verification email sent. Please check your inbox.' };
+    }
+    return { ok: false, error: 'Sign-up failed' };
+  } catch (err) { return { ok: false, error: err.message } }
+}
+
+// Email/password sign-in
+async function signInWithEmailFunc(email, password) {
+  if (typeof firebase === 'undefined') { throw new Error('Auth not configured'); }
+  try {
+    const res = await firebase.auth().signInWithEmailAndPassword(email, password);
+    // if signed in but not verified, show message
+    if (res.user && !res.user.emailVerified) {
+      return { ok: true, verified: false, message: 'Signed in but email not verified. Check your inbox.' };
+    }
+    // If verified, ensure users/{uid}.enabled = true
+    if (res.user && res.user.emailVerified && db) {
+      await db.collection('users').doc(res.user.uid).set({ enabled: true }, { merge: true });
+    }
+    return { ok: true, verified: (res.user && res.user.emailVerified) };
+  } catch (err) { return { ok: false, error: err.message } }
+}
+
+async function resendVerificationEmail() {
+  const u = firebase.auth().currentUser;
+  if (!u) throw new Error('Not signed in');
+  try {
+    await u.sendEmailVerification();
+    return { ok: true };
+  } catch (err) { return { ok: false, error: err.message } }
+}
+
 async function signOutUser() {
   if (typeof firebase === 'undefined') {
     showNotification('Auth is not configured.', 'warning');
@@ -536,7 +593,7 @@ function _updateAuthUI() {
     if (DOM.miniAccount) {
       DOM.miniAccount.style.display = 'flex';
       if (DOM.miniName) DOM.miniName.textContent = state.user.displayName || state.user.email;
-      if (DOM.miniQuota) DOM.miniQuota.textContent = state.user.unlimited ? 'Unlimited' : `Attempts left: ${getAttemptsLeft()}`;
+      if (DOM.miniQuota) DOM.miniQuota.textContent = state.user.unlimited ? 'Unlimited' : `Attempts left: ${state.user.remainingAttempts ?? getAttemptsLeft()}`;
     }
   } else {
     if (DOM.userBadge) DOM.userBadge.style.display = 'none';
@@ -639,6 +696,32 @@ function hideAccountModal() {
 if (DOM.signInBtn) DOM.signInBtn.addEventListener('click', () => showAuthModal());
 if (DOM.authModalClose) DOM.authModalClose.addEventListener('click', () => hideAuthModal());
 if (DOM.authModalSignIn) DOM.authModalSignIn.addEventListener('click', async () => { hideAuthModal(); await signInWithGoogle(); });
+if (DOM.showEmailFormBtn) DOM.showEmailFormBtn.addEventListener('click', () => { if (DOM.emailAuthForm) DOM.emailAuthForm.style.display = 'block'; });
+if (DOM.authEmailSignUp) DOM.authEmailSignUp.addEventListener('click', async () => {
+  const email = DOM.authEmail.value.trim(); const pass = DOM.authPassword.value.trim();
+  if (!email || !pass) { showNotification('Email and password required', 'warning'); return; }
+  try {
+    const r = await signUpWithEmail(email, pass);
+    if (r.ok) {
+      DOM.authMessage.textContent = r.message || 'Verification email sent';
+      DOM.authResendVerification.style.display = 'inline-flex';
+    } else {
+      DOM.authMessage.textContent = `Error: ${r.error}`;
+    }
+  } catch (err) { DOM.authMessage.textContent = `Error: ${err.message}` }
+});
+if (DOM.authEmailSignIn) DOM.authEmailSignIn.addEventListener('click', async () => {
+  const email = DOM.authEmail.value.trim(); const pass = DOM.authPassword.value.trim();
+  if (!email || !pass) { showNotification('Email and password required', 'warning'); return; }
+  const r = await signInWithEmailFunc(email, pass);
+  if (r.ok) {
+    if (r.verified) { hideAuthModal(); showNotification('Signed in (email verified)', 'success'); }
+    else { DOM.authMessage.textContent = r.message || 'Sign-in successful: email not verified'; DOM.authResendVerification.style.display = 'inline-flex'; }
+  } else {
+    DOM.authMessage.textContent = `Sign-in failed: ${r.error}`;
+  }
+});
+if (DOM.authResendVerification) DOM.authResendVerification.addEventListener('click', async () => { try { const r = await resendVerificationEmail(); if (r.ok) showNotification('Verification email sent', 'success'); else showNotification(`Failed: ${r.error}`, 'error'); } catch (err) { showNotification(`Failed: ${err.message}`, 'error'); } });
 if (DOM.signOutBtn) DOM.signOutBtn.addEventListener('click', () => signOutUser());
 if (DOM.accountBtn) DOM.accountBtn.addEventListener('click', () => showAccountModal());
 if (DOM.accountModalClose) DOM.accountModalClose.addEventListener('click', () => hideAccountModal());

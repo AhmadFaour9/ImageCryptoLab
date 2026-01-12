@@ -441,11 +441,26 @@
   <!-- Auth modal -->
   <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="panel">
-      <h4>Sign in to continue</h4>
-      <p>You've reached the free attempt limit. Sign in with Google to continue using decrypt attempts (resets daily).</p>
-      <div class="actions">
-        <button class="btn secondary" id="authModalClose" type="button">Close</button>
+      <h4>Sign in or create an account</h4>
+      <p>You've reached the free attempt limit. Sign in with Google or create an account using email/password to continue using decrypt attempts (resets daily). After signing up we will send a verification email; your account will be activated when you confirm your email.</p>
+
+      <div style="display:flex; gap:8px; margin-bottom:6px;">
         <button class="btn" id="authModalSignIn" type="button">Sign in with Google</button>
+        <button class="btn" id="showEmailFormBtn" type="button">Use email & password</button>
+        <button class="btn secondary" id="authModalClose" type="button">Close</button>
+      </div>
+
+      <div id="emailAuthForm" style="display:none; margin-top:8px;">
+        <label>Email</label>
+        <input id="authEmail" type="email" placeholder="you@example.com" />
+        <label style="margin-top:8px;">Password</label>
+        <input id="authPassword" type="password" placeholder="Choose a secure password" />
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="btn" id="authEmailSignUp" type="button">Create account</button>
+          <button class="btn" id="authEmailSignIn" type="button">Sign in</button>
+          <button class="btn secondary" id="authResendVerification" type="button" style="display:none;">Resend verification</button>
+        </div>
+        <div id="authMessage" class="meta" style="margin-top:8px;"></div>
       </div>
     </div>
   </div>
