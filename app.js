@@ -339,7 +339,16 @@ function clearState() {
   DOM.previewPlaceholder.style.display = 'grid';
   DOM.previewPlaceholder.textContent = 'No image selected';
   DOM.fileMeta.textContent = '';
+  
+  // Disable all action buttons
   DOM.downloadOriginalBtn.disabled = true;
+  DOM.convertBtn.disabled = true;
+  DOM.makeBase64Btn.disabled = true;
+  DOM.makeHexBtn.disabled = true;
+  DOM.encryptBtn.disabled = true;
+  DOM.applyResizeBtn.disabled = true;
+  
+  // Clear outputs
   DOM.encodeOut.value = '';
   DOM.encOut.value = '';
   DOM.decIn.value = '';
@@ -675,7 +684,7 @@ async function convertAndDownload() {
  * Handle convert button click
  */
 DOM.convertBtn.addEventListener("click", async () => {
-  if (state.isProcessing) return;
+  if (state.isProcessing || !state.currentBytes) return;
   DOM.convertBtn.disabled = true;
   try {
     state.isProcessing = true;
@@ -685,7 +694,9 @@ DOM.convertBtn.addEventListener("click", async () => {
     showNotification(`Conversion error: ${err.message}`, 'error');
   } finally {
     state.isProcessing = false;
-    DOM.convertBtn.disabled = false;
+    if (state.currentBytes) {
+      DOM.convertBtn.disabled = false;
+    }
   }
 });
 
@@ -693,10 +704,10 @@ DOM.convertBtn.addEventListener("click", async () => {
  * Handle apply resize button click
  */
 DOM.applyResizeBtn.addEventListener("click", async () => {
-  if (state.isProcessing) return;
+  if (state.isProcessing || !state.currentBytes) return;
   DOM.applyResizeBtn.disabled = true;
   try {
-    if (!state.currentBytes) return;
+    if (!state.currentBytes) throw new Error("No file loaded");
 
     const targetMime = "image/png";
     const bmpOrCanvas = await bytesToImageBitmap(state.currentBytes);
@@ -752,7 +763,9 @@ DOM.applyResizeBtn.addEventListener("click", async () => {
     showNotification(`Resize error: ${err.message}`, 'error');
   } finally {
     state.isProcessing = false;
-    DOM.applyResizeBtn.disabled = false;
+    if (state.currentBytes) {
+      DOM.applyResizeBtn.disabled = false;
+    }
   }
 });
 
