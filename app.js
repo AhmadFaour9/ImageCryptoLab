@@ -658,3 +658,36 @@ DOM.useAsCurrentBtn.addEventListener("click", () => {
     showNotification(`Error: ${err.message}`, 'error');
   }
 });
+
+// ============================================================================
+// TAB SWITCHING
+// ============================================================================
+
+document.querySelectorAll('.tab').forEach(tabBtn => {
+  tabBtn.addEventListener('click', (e) => {
+    const tabName = tabBtn.getAttribute('data-tab');
+    if (!tabName) return;
+
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+    });
+
+    // Remove show class from all panels
+    document.querySelectorAll('.panel').forEach(panel => {
+      panel.classList.remove('show');
+    });
+
+    // Add active class to clicked tab
+    tabBtn.classList.add('active');
+    tabBtn.setAttribute('aria-selected', 'true');
+
+    // Show corresponding panel
+    const panel = document.getElementById(`panel-${tabName}`);
+    if (panel) {
+      panel.classList.add('show');
+    }
+  });
+});
+
