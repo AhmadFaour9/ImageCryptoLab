@@ -246,6 +246,15 @@ firebase init hosting
 firebase deploy
 ```
 
+**Cloud Functions for attempt logging & admin actions**
+If you want server-side enforcement of decrypt attempts and admin approval endpoints, deploy the functions in `functions/` to your Firebase project or other Node host.
+
+Steps:
+1. cd functions && npm install
+2. Deploy to Cloud Functions (or Cloud Run) using the Firebase CLI or your host tooling
+3. Set `window.FIREBASE_FUNCTIONS_BASE` in your site (before `app.js`) to the functions URL so the client can call `/checkAttempt` and `/approveRequest`
+4. Update Firestore security rules (see `firestore.rules`) and add admin claims to admin accounts using the Firebase Admin SDK
+
 ---
 
 ## Performance Optimization
