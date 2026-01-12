@@ -10,11 +10,16 @@ test.describe('Decrypt attempt limiter', () => {
     // Ensure decrypt panel visible
     await page.click('button[data-tab="decrypt"]');
 
+    // Ensure clean storage
+    await page.evaluate(() => localStorage.clear());
+
     // Paste an invalid ciphertext and attempt 6 times
     for (let i = 0; i < 6; i++) {
       await page.fill('#decIn', 'invalid:invalid:deadbeef');
       await page.fill('#decPass', 'wrongpass');
       await page.click('#decryptBtn');
+      // small wait for UI update
+      await page.waitForTimeout(200);
     }
 
     // On 6th attempt, the button should be disabled or auth modal shown
