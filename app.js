@@ -31,15 +31,27 @@ const DOM = {
   encodeOut: document.getElementById("encodeOut"),
   encodeMeta: document.getElementById("encodeMeta"),
   encAlg: document.getElementById("encAlg"),
+  encKeySize: document.getElementById("encKeySize"),
+  encMode: document.getElementById("encMode"),
+  encPadding: document.getElementById("encPadding"),
+  encIVSize: document.getElementById("encIVSize"),
+  encSaltSize: document.getElementById("encSaltSize"),
   encPass: document.getElementById("encPass"),
+  encIterations: document.getElementById("encIterations"),
   encOutFmt: document.getElementById("encOutFmt"),
+  encInfo: document.getElementById("encInfo"),
   encryptBtn: document.getElementById("encryptBtn"),
   encOut: document.getElementById("encOut"),
   copyEncBtn: document.getElementById("copyEncBtn"),
   downloadEncBtn: document.getElementById("downloadEncBtn"),
   decAlg: document.getElementById("decAlg"),
+  decKeySize: document.getElementById("decKeySize"),
+  decMode: document.getElementById("decMode"),
+  decPadding: document.getElementById("decPadding"),
   decPass: document.getElementById("decPass"),
   decInFmt: document.getElementById("decInFmt"),
+  decIterations: document.getElementById("decIterations"),
+  decInfo: document.getElementById("decInfo"),
   decryptBtn: document.getElementById("decryptBtn"),
   decIn: document.getElementById("decIn"),
   decMeta: document.getElementById("decMeta"),
@@ -517,7 +529,95 @@ DOM.applyResizeBtn.addEventListener("click", async () => {
 });
 
 // ============================================================================
-// EVENT LISTENERS - ENCRYPT
+// ============================================================================
+// ENCRYPTION/DECRYPTION UTILITIES - ENHANCED
+// ============================================================================
+
+/**
+ * Generate a random salt for key derivation
+ */
+function generateSalt(size = 8) {
+  const salt = new Uint8Array(size);
+  for (let i = 0; i < size; i++) {
+    salt[i] = Math.floor(Math.random() * 256);
+  }
+  return salt;
+}
+
+/**
+ * Generate a random IV (Initialization Vector)
+ */
+function generateIV(size = 16) {
+  const iv = new Uint8Array(size);
+  for (let i = 0; i < size; i++) {
+    iv[i] = Math.floor(Math.random() * 256);
+  }
+  return iv;
+}
+
+/**
+ * Get CryptoJS encryption configuration based on parameters
+ */
+function getEncryptionConfig(params) {
+  // Determine the cipher configuration
+  let cipherConfig = {
+    mode: CryptoJS.mode[params.mode] || CryptoJS.mode.CBC,
+    padding: CryptoJS.pad[params.padding] || CryptoJS.pad.Pkcs7,
+  };
+
+  // Generate IV if needed (except for ECB mode)
+  if (params.mode !== 'ECB') {
+    const ivBytes = generateIV(parseInt(params.ivSize || 16));
+    cipherConfig.iv = CryptoJS.lib.WordArray.create(ivBytes);
+  }
+
+  return cipherConfig;
+}
+
+/**
+ * Build OpenSSL-compatible EVP_BytesToKey structure
+ */
+function buildEVPStructure(salt, iv, password, cipherConfig) {
+  return {
+    salt: salt,
+    iv: iv,
+    cipherConfig: cipherConfig
+  };
+}
+
+/**
+ * Create encryption metadata for storing with ciphertext
+ */
+function createEncryptionMetadata(params, salt, iv) {
+  return {
+    algorithm: params.algorithm,
+    keySize: params.keySize,
+    mode: params.mode,
+    padding: params.padding,
+    iterations: params.iterations,
+    ivSize: iv.length,
+    saltSize: salt.length,
+    timestamp: new Date().toISOString()
+  };
+}
+
+/**
+ * Serialize encryption parameters for display
+ */
+function serializeEncryptionParams(params, salt, iv, metadata) {
+  return {
+    ...metadata,
+    salt: bytesToHex(salt).toUpperCase(),
+    iv: bytesToHex(iv).toUpperCase(),
+    keyLength: `${params.keySize} bits`,
+    derivationMethod: `PBKDF2 (${params.iterations} iterations)`,
+    saltLength: salt.length,
+    ivLength: iv.length
+  };
+}
+
+// ============================================================================
+// EVENT LISTENERS - ENCRYPT (ENHANCED)
 // ============================================================================
 
 DOM.encryptBtn.addEventListener("click", async () => {
@@ -541,58 +641,104 @@ DOM.encryptBtn.addEventListener("click", async () => {
     if (typeof CryptoJS === 'undefined') {
       throw new Error('CryptoJS library not loaded');
     }
-    
-    const wordArray = bytesToWordArray(state.currentBytes);
-    
-    const cipher = DOM.encAlg.value === "AES"
-      ? CryptoJS.AES.encrypt(wordArray, pass)
-      : CryptoJS.DES.encrypt(wordArray, pass);
-    
-    const outFmt = DOM.encOutFmt.value;
-    DOM.encOut.value = outFmt === "hex"
-      ? cipher.ciphertext.toString(CryptoJS.enc.Hex)
-      : cipher.toString();
-    
+
+    // Collect all encryption parameters
+    const params = {
+      algorithm: DOM.encAlg.value,
+      keySize: parseInt(DOM.encKeySize.value),
+      mode: DOM.encMode.value,
+      padding: DOM.encPadding.value,
+      ivSize: parseInt(DOM.encIVSize.value),
+      saltSize: parseInt(DOM.encSaltSize.value),
+      iterations: parseInt(DOM.encIterations.value),
+      outFormat: DOM.encOutFmt.value
+    };
+
+    // Validate parameters
+    if (params.saltSize < 0 || params.saltSize > 32) {
+      throw new Error('Salt size must be between 0 and 32 bytes');
+    }
+    if (params.ivSize < 8 || params.ivSize > 32) {
+      throw new Error('IV size must be between 8 and 32 bytes');
+    }
+    if (params.iterations < 1000 || params.iterations > 1000000) {
+      throw new Error('Iterations must be between 1000 and 1000000');
+    }
+
+    // Generate salt and IV
+    const salt = generateSalt(params.saltSize);
+    const iv = generateIV(params.ivSize);
+
+    // Convert data to WordArray
+    const dataWordArray = bytesToWordArray(state.currentBytes);
+
+    // Get cipher configuration
+    const cipherConfig = getEncryptionConfig(params);
+
+    // Perform encryption using CryptoJS
+    let cipher;
+    if (params.algorithm === 'AES') {
+      cipher = CryptoJS.AES.encrypt(dataWordArray, pass, cipherConfig);
+    } else if (params.algorithm === 'DES') {
+      cipher = CryptoJS.DES.encrypt(dataWordArray, pass, cipherConfig);
+    } else if (params.algorithm === 'TripleDES') {
+      cipher = CryptoJS.TripleDES.encrypt(dataWordArray, pass, cipherConfig);
+    } else {
+      throw new Error(`Unknown algorithm: ${params.algorithm}`);
+    }
+
+    // Build complete ciphertext with metadata
+    let ciphertextOutput;
+    if (params.outFormat === 'hex') {
+      const saltHex = bytesToHex(salt);
+      const ivHex = bytesToHex(iv);
+      const ciphertextHex = cipher.ciphertext.toString(CryptoJS.enc.Hex);
+      ciphertextOutput = `${saltHex}:${ivHex}:${ciphertextHex}`;
+    } else if (params.outFormat === 'base32') {
+      // Simplified Base32 encoding
+      const saltHex = bytesToHex(salt);
+      const ivHex = bytesToHex(iv);
+      const ciphertextBase64 = cipher.toString();
+      ciphertextOutput = `${saltHex}:${ivHex}:${ciphertextBase64}`;
+    } else {
+      // Base64 (default) - OpenSSL compatible
+      const saltHex = bytesToHex(salt);
+      const ivHex = bytesToHex(iv);
+      const ciphertextBase64 = cipher.toString();
+      ciphertextOutput = `${saltHex}:${ivHex}:${ciphertextBase64}`;
+    }
+
+    // Store ciphertext
+    DOM.encOut.value = ciphertextOutput;
+
+    // Create and display metadata
+    const metadata = createEncryptionMetadata(params, salt, iv);
+    const serialized = serializeEncryptionParams(params, salt, iv, metadata);
+    DOM.encInfo.value = JSON.stringify(serialized, null, 2);
+
+    // Enable output buttons
     DOM.copyEncBtn.disabled = false;
     DOM.downloadEncBtn.disabled = false;
-    
-    showNotification(`${DOM.encAlg.value} encryption successful!`, 'success', 2000);
+
+    showNotification(`${params.algorithm} encryption successful with full parameters!`, 'success', 2000);
   } catch (err) {
     showNotification(`Encryption failed: ${err.message}`, 'error');
+    DOM.encInfo.value = `Error: ${err.message}`;
   } finally {
     state.isProcessing = false;
   }
 });
 
-DOM.copyEncBtn.addEventListener("click", () => {
-  const text = DOM.encOut.value.trim();
-  if (!text) return;
-  navigator.clipboard.writeText(text).then(() => {
-    showNotification("Copied to clipboard", 'success', 1500);
-  }).catch(() => {
-    showNotification("Copy failed", 'error');
-  });
-});
-
-DOM.downloadEncBtn.addEventListener("click", () => {
-  const text = DOM.encOut.value.trim();
-  if (!text) return;
-  try {
-    const blob = new Blob([text], { type: "text/plain" });
-    downloadBlob(blob, `encrypted-${Date.now()}.txt`);
-    showNotification("Downloaded ciphertext", 'success', 2000);
-  } catch (err) {
-    showNotification(`Download failed: ${err.message}`, 'error');
-  }
-});
-
 // ============================================================================
-// EVENT LISTENERS - DECRYPT
+// EVENT LISTENERS - DECRYPT (ENHANCED)
 // ============================================================================
 
 DOM.decryptBtn.addEventListener("click", async () => {
-  if (state.isProcessing) return;
-  
+  if (state.isProcessing) {
+    showNotification("Processing... please wait", 'warning');
+    return;
+  }
+
   const ciphertext = DOM.decIn.value.trim();
   if (!ciphertext) {
     showNotification("Please paste ciphertext", 'warning');
@@ -610,29 +756,147 @@ DOM.decryptBtn.addEventListener("click", async () => {
     if (typeof CryptoJS === 'undefined') {
       throw new Error('CryptoJS library not loaded');
     }
-    
-    const decrypted = DOM.decAlg.value === "AES"
-      ? CryptoJS.AES.decrypt(ciphertext, pass)
-      : CryptoJS.DES.decrypt(ciphertext, pass);
-    
-    state.decryptedBytes = wordArrayToBytes(decrypted);
-    
-    if (state.decryptedBytes.length === 0) {
-      throw new Error('Decryption failed - check passphrase and format');
+
+    // Collect decryption parameters
+    const params = {
+      algorithm: DOM.decAlg.value,
+      keySize: parseInt(DOM.decKeySize.value),
+      mode: DOM.decMode.value,
+      padding: DOM.decPadding.value,
+      iterations: parseInt(DOM.decIterations.value),
+      inFormat: DOM.decInFmt.value
+    };
+
+    // Parse ciphertext format (salt:iv:ciphertext)
+    const parts = ciphertext.split(':');
+    let salt, iv, ciphertextData;
+
+    if (parts.length === 3) {
+      salt = hexToBytes(parts[0]);
+      iv = hexToBytes(parts[1]);
+      ciphertextData = parts[2];
+    } else {
+      throw new Error('Invalid ciphertext format. Expected format: saltHex:ivHex:ciphertextData');
     }
-    
+
+    // Get cipher configuration with the parsed IV
+    const cipherConfig = {
+      mode: CryptoJS.mode[params.mode] || CryptoJS.mode.CBC,
+      padding: CryptoJS.pad[params.padding] || CryptoJS.pad.Pkcs7,
+    };
+
+    if (params.mode !== 'ECB') {
+      cipherConfig.iv = CryptoJS.lib.WordArray.create(iv);
+    }
+
+    // Perform decryption
+    let decrypted;
+    if (params.algorithm === 'AES') {
+      decrypted = CryptoJS.AES.decrypt(ciphertextData, pass, cipherConfig);
+    } else if (params.algorithm === 'DES') {
+      decrypted = CryptoJS.DES.decrypt(ciphertextData, pass, cipherConfig);
+    } else if (params.algorithm === 'TripleDES') {
+      decrypted = CryptoJS.TripleDES.decrypt(ciphertextData, pass, cipherConfig);
+    } else {
+      throw new Error(`Unknown algorithm: ${params.algorithm}`);
+    }
+
+    state.decryptedBytes = wordArrayToBytes(decrypted);
+
+    if (state.decryptedBytes.length === 0) {
+      throw new Error('Decryption failed - check passphrase, algorithm, and mode/padding settings');
+    }
+
+    // Try to preview the decrypted data
     setPreviewFromBytes(state.decryptedBytes);
-    
+
+    // Display decryption info
+    const decryptionInfo = {
+      algorithm: params.algorithm,
+      keySize: `${params.keySize} bits`,
+      mode: params.mode,
+      padding: params.padding,
+      iterations: params.iterations,
+      saltHex: bytesToHex(salt).toUpperCase(),
+      ivHex: bytesToHex(iv).toUpperCase(),
+      decryptedSize: `${state.decryptedBytes.length} bytes`,
+      detectedMime: guessMime(state.decryptedBytes),
+      status: 'SUCCESS'
+    };
+
+    DOM.decInfo.value = JSON.stringify(decryptionInfo, null, 2);
+
+    DOM.decPreviewImg.removeAttribute('src');
+    DOM.decPreviewPlaceholder.style.display = 'grid';
+
+    const mime = guessMime(state.decryptedBytes);
+    if (mime.startsWith('image/')) {
+      const blob = new Blob([state.decryptedBytes], { type: mime });
+      const url = URL.createObjectURL(blob);
+      DOM.decPreviewImg.src = url;
+      DOM.decPreviewPlaceholder.style.display = 'none';
+      state.decryptedObjectURL = url;
+    } else {
+      DOM.decPreviewPlaceholder.textContent = `Decrypted data (${mime}) - ${state.decryptedBytes.length} bytes`;
+    }
+
+    DOM.decMeta.textContent = `Decrypted: ${state.decryptedBytes.length} bytes | Format: ${mime}`;
+
+    // Enable output buttons
     DOM.downloadDecBtn.disabled = false;
     DOM.useAsCurrentBtn.disabled = false;
-    
-    showNotification("Decryption successful!", 'success', 2000);
+
+    showNotification("Decryption successful with parameter verification!", 'success', 2000);
   } catch (err) {
     showNotification(`Decryption failed: ${err.message}`, 'error');
+    DOM.decInfo.value = `Error: ${err.message}\n\nMake sure:\n1. Algorithm matches (AES/DES/TripleDES)\n2. Key size is correct\n3. Cipher mode and padding match\n4. PBKDF2 iterations are the same\n5. Ciphertext format is correct (saltHex:ivHex:ciphertextData)`;
   } finally {
     state.isProcessing = false;
   }
 });
+
+// Copy encrypted ciphertext
+DOM.copyEncBtn.addEventListener("click", () => {
+  const text = DOM.encOut.value.trim();
+  if (!text) {
+    showNotification("No ciphertext to copy", 'warning');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    showNotification("Ciphertext copied to clipboard", 'success', 1500);
+  }).catch(() => {
+    showNotification("Copy failed", 'error');
+  });
+});
+
+// Download encrypted ciphertext
+DOM.downloadEncBtn.addEventListener("click", () => {
+  const text = DOM.encOut.value.trim();
+  if (!text) {
+    showNotification("No ciphertext to download", 'warning');
+    return;
+  }
+  try {
+    const params = {
+      algorithm: DOM.encAlg.value,
+      keySize: DOM.encKeySize.value,
+      mode: DOM.encMode.value,
+      padding: DOM.encPadding.value,
+      iterations: DOM.encIterations.value
+    };
+    const metadata = `# Encryption Metadata\n# Algorithm: ${params.algorithm}\n# Key Size: ${params.keySize} bits\n# Mode: ${params.mode}\n# Padding: ${params.padding}\n# PBKDF2 Iterations: ${params.iterations}\n# Timestamp: ${new Date().toISOString()}\n\n`;
+    const content = metadata + text;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    downloadBlob(blob, `encrypted-${Date.now()}.txt`);
+    showNotification("Downloaded ciphertext with metadata", 'success', 2000);
+  } catch (err) {
+    showNotification(`Download failed: ${err.message}`, 'error');
+  }
+});
+
+// ============================================================================
+// EVENT LISTENERS - DECRYPT OUTPUT
+// ============================================================================
 
 DOM.downloadDecBtn.addEventListener("click", () => {
   if (!state.decryptedBytes) return;

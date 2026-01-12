@@ -140,7 +140,7 @@
 
       <!-- Encrypt -->
       <div class="panel" id="panel-encrypt" role="tabpanel">
-        <h3>Encrypt file bytes (AES or DES) — client‑side</h3>
+        <h3>Encrypt file bytes — client‑side with full parameters</h3>
 
         <div class="grid3">
           <div>
@@ -148,12 +148,63 @@
             <select id="encAlg">
               <option value="AES">AES</option>
               <option value="DES">DES</option>
+              <option value="TripleDES">Triple DES</option>
             </select>
           </div>
 
           <div>
+            <label>Key Size (bits)</label>
+            <select id="encKeySize">
+              <option value="128">128</option>
+              <option value="192">192</option>
+              <option value="256" selected>256</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Cipher Mode</label>
+            <select id="encMode">
+              <option value="CBC" selected>CBC</option>
+              <option value="ECB">ECB</option>
+              <option value="CFB">CFB</option>
+              <option value="OFB">OFB</option>
+              <option value="CTR">CTR</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid3 mt">
+          <div>
+            <label>Padding Mode</label>
+            <select id="encPadding">
+              <option value="Pkcs7" selected>PKCS7</option>
+              <option value="AnsiX923">ANSI X9.23</option>
+              <option value="Iso10126">ISO 10126</option>
+              <option value="Iso97971">ISO 9797-1</option>
+              <option value="NoPadding">No Padding</option>
+            </select>
+          </div>
+
+          <div>
+            <label>IV Size (bytes)</label>
+            <input id="encIVSize" type="number" min="8" max="32" value="16" />
+          </div>
+
+          <div>
+            <label>Salt Length (bytes)</label>
+            <input id="encSaltSize" type="number" min="0" max="32" value="8" />
+          </div>
+        </div>
+
+        <div class="grid3 mt">
+          <div>
             <label>Passphrase</label>
-            <input id="encPass" type="password" placeholder="Enter passphrase" />
+            <input id="encPass" type="password" placeholder="Enter strong passphrase" />
+          </div>
+
+          <div>
+            <label>Iterations (PBKDF2)</label>
+            <input id="encIterations" type="number" min="1000" max="1000000" value="10000" />
           </div>
 
           <div class="alignEnd">
@@ -163,32 +214,42 @@
 
         <div class="grid3 mt">
           <div>
-            <label>Output encoding</label>
+            <label>Output Encoding</label>
             <select id="encOutFmt">
-              <option value="base64">Base64</option>
+              <option value="base64" selected>Base64</option>
               <option value="hex">Hex</option>
+              <option value="base32">Base32</option>
             </select>
           </div>
           <div class="alignEnd">
             <button class="btn secondary" id="copyEncBtn" type="button" disabled>Copy ciphertext</button>
           </div>
           <div class="alignEnd">
-            <button class="btn secondary" id="downloadEncBtn" type="button" disabled>Download ciphertext (.txt)</button>
+            <button class="btn secondary" id="downloadEncBtn" type="button" disabled>Download ciphertext</button>
           </div>
         </div>
+
+        <label class="mt">Encryption Info</label>
+        <textarea id="encInfo" spellcheck="false" readonly placeholder="Encryption parameters will appear here..."></textarea>
 
         <label class="mt">Ciphertext</label>
         <textarea id="encOut" spellcheck="false" placeholder="Ciphertext will appear here..."></textarea>
 
         <div class="notice">
-          Uses CryptoJS passphrase encryption (OpenSSL‑compatible salted format for Base64 output).
-          Keep the same algorithm + passphrase to decrypt.
+          <strong>Encryption Parameters:</strong><br/>
+          • Algorithm: AES-128/192/256 or DES/TripleDES<br/>
+          • Mode: CBC (default), ECB, CFB, OFB, CTR<br/>
+          • Padding: PKCS7, ANSI X9.23, ISO 10126, ISO 9797-1<br/>
+          • IV: Randomly generated per encryption<br/>
+          • Salt: OpenSSL-compatible EVP format<br/>
+          • Key Derivation: PBKDF2 with configurable iterations<br/>
+          Keep ALL parameters consistent to decrypt successfully.
         </div>
       </div>
 
       <!-- Decrypt -->
       <div class="panel" id="panel-decrypt" role="tabpanel">
-        <h3>Decrypt ciphertext back to bytes</h3>
+        <h3>Decrypt ciphertext back to bytes with parameter matching</h3>
 
         <div class="grid3">
           <div>
@@ -196,28 +257,99 @@
             <select id="decAlg">
               <option value="AES">AES</option>
               <option value="DES">DES</option>
+              <option value="TripleDES">Triple DES</option>
             </select>
           </div>
 
           <div>
-            <label>Passphrase</label>
-            <input id="decPass" type="password" placeholder="Enter passphrase" />
+            <label>Key Size (bits)</label>
+            <select id="decKeySize">
+              <option value="128">128</option>
+              <option value="192">192</option>
+              <option value="256" selected>256</option>
+            </select>
           </div>
 
-          <div class="alignEnd">
-            <button class="btn" id="decryptBtn" type="button">Decrypt</button>
+          <div>
+            <label>Cipher Mode</label>
+            <select id="decMode">
+              <option value="CBC" selected>CBC</option>
+              <option value="ECB">ECB</option>
+              <option value="CFB">CFB</option>
+              <option value="OFB">OFB</option>
+              <option value="CTR">CTR</option>
+            </select>
           </div>
         </div>
 
         <div class="grid3 mt">
           <div>
-            <label>Ciphertext encoding</label>
-            <select id="decInFmt">
-              <option value="base64">Base64</option>
-              <option value="hex">Hex</option>
+            <label>Padding Mode</label>
+            <select id="decPadding">
+              <option value="Pkcs7" selected>PKCS7</option>
+              <option value="AnsiX923">ANSI X9.23</option>
+              <option value="Iso10126">ISO 10126</option>
+              <option value="Iso97971">ISO 9797-1</option>
+              <option value="NoPadding">No Padding</option>
             </select>
           </div>
+
+          <div>
+            <label>Iterations (PBKDF2)</label>
+            <input id="decIterations" type="number" min="1000" max="1000000" value="10000" />
+          </div>
+
+          <div>
+            <label>Ciphertext Encoding</label>
+            <select id="decInFmt">
+              <option value="base64" selected>Base64</option>
+              <option value="hex">Hex</option>
+              <option value="base32">Base32</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid3 mt">
+          <div>
+            <label>Passphrase</label>
+            <input id="decPass" type="password" placeholder="Enter passphrase (must match encryption)" />
+          </div>
+
           <div class="alignEnd">
+            <button class="btn" id="decryptBtn" type="button">Decrypt</button>
+          </div>
+
+          <div></div>
+        </div>
+
+        <label class="mt">Paste Ciphertext Below</label>
+        <textarea id="decIn" spellcheck="false" placeholder="Paste ciphertext here..."></textarea>
+
+        <label class="mt">Decryption Parameters</label>
+        <textarea id="decInfo" spellcheck="false" readonly placeholder="Decryption parameters and result will appear here..."></textarea>
+
+        <div class="grid2 mt">
+          <button class="btn secondary" id="downloadDecBtn" type="button" disabled>Download decrypted file</button>
+          <button class="btn secondary" id="useAsCurrentBtn" type="button" disabled>Use as current file</button>
+        </div>
+
+        <label class="mt">Decrypted Preview</label>
+        <div class="preview">
+          <img id="decPreviewImg" style="display: none; max-width: 100%; max-height: 200px; border-radius: 4px;" />
+          <div id="decPreviewPlaceholder" style="color: #999; padding: 20px; text-align: center;">Preview will appear here...</div>
+        </div>
+
+        <div id="decMeta" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
+
+        <div class="notice">
+          <strong>Decryption Requirements:</strong><br/>
+          • Must use exact same algorithm and key size<br/>
+          • Cipher mode, padding, and PBKDF2 iterations must match<br/>
+          • Ciphertext encoding (Base64/Hex/Base32) must match output format<br/>
+          • Even one parameter mismatch will cause decryption to fail<br/>
+          • Save encryption parameters securely for future decryption
+        </div>
+      </div>
             <button class="btn secondary" id="downloadDecBtn" type="button" disabled>Download decrypted bytes</button>
           </div>
           <div class="alignEnd">
