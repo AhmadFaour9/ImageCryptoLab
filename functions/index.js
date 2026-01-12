@@ -105,11 +105,70 @@ app.post('/approveRequest', async (req, res) => {
   }
 });
 
-// Stripe-related placeholders (require STRIPE secret to function)
+// Stripe integration (optional)
+let stripe = null;
+if (process.env.STRIPE_SECRET) {
+  try {
+    stripe = require('stripe')(process.env.STRIPE_SECRET);
+  } catch (e) {
+    console.warn('Stripe init failed', e.message);
+    stripe = null;
+  }
+}
+
+// Create a checkout session for purchasing unlimited access
 app.post('/createCheckoutSession', async (req, res) => {
-  if (!process.env.STRIPE_SECRET) return res.status(501).json({ ok: false, error: 'Stripe not configured' });
-  // Implement checkout session creation here if you configure STRIPE_SECRET
-  res.status(501).json({ ok: false, error: 'Not implemented on this deployment' });
+  try {
+    if (!stripe) return res.status(501).json({ ok: false, error: 'Stripe not configured' });
+    const decoded = await verifyBearer(req);
+    const uid = decoded.uid;
+    const email = decoded.email || req.body.email;
+    // You can pass priceId or plan via body; for now use a minimal single-price object
+    const priceId = req.body.priceId || process.env.STRIPE_PRICE_ID;
+    if (!priceId) return res.status(400).json({ ok: false, error: 'Missing priceId (set STRIPE_PRICE_ID)' });
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { uid },
+      customer_email: email,
+      success_url: req.body.successUrl || `${req.headers.origin || ''}/?purchase=success`,
+      cancel_url: req.body.cancelUrl || `${req.headers.origin || ''}/?purchase=cancel`
+    });
+
+    res.json({ ok: true, sessionUrl: session.url, id: session.id });
+  } catch (err) {
+    console.error('createCheckoutSession', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Webhook endpoint to handle checkout.session.completed
+app.post('/stripeWebhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  if (!process.env.STRIPE_WEBHOOK_SECRET) return res.status(501).send('Webhook not configured');
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('Webhook signature verification failed', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const uid = session.metadata?.uid;
+    try {
+      if (uid) {
+        await db.collection('users').doc(uid).set({ unlimited: true }, { merge: true });
+      }
+      // record payment
+      await db.collection('payments').add({ sessionId: session.id, uid: uid || null, amount_total: session.amount_total || null, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+    } catch (e) { console.error('post-purchase processing failed', e.message); }
+  }
+
+  res.json({ received: true });
 });
 
 // Expose Express app

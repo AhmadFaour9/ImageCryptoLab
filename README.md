@@ -121,7 +121,15 @@ To provide production-grade enforcement we include a small Cloud Functions API (
 - `POST /checkAttempt?action=check|try` — atomically checks or increments the daily attempt counter for an authenticated user.
 - `POST /listPendingRequests` — admin-only listing of pending unlimited requests.
 - `POST /approveRequest` — admin-only endpoint to approve and set `users/{uid}.unlimited = true`.
-- `POST /createCheckoutSession` and `POST /stripeWebhook` — Stripe stubs to implement payments for unlimited access (configure `STRIPE_SECRET` to enable).
+- `POST /createCheckoutSession` and `POST /stripeWebhook` — Stripe endpoints for purchases (configure `STRIPE_SECRET`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` to enable).
+
+  To enable Stripe payments:
+  1. Create a Stripe account and create a one-time Price (note the Price ID).
+  2. Set environment variables on your Functions host: `STRIPE_SECRET` (secret key) and `STRIPE_PRICE_ID` (price id).
+  3. (Recommended) Set `STRIPE_WEBHOOK_SECRET` and register the webhook URL in the Stripe dashboard pointing to `/stripeWebhook` to receive `checkout.session.completed` events.
+  4. Deploy `functions/` and set `FIREBASE_FUNCTIONS_BASE` in your frontend so the client can call `/createCheckoutSession` to initiate a checkout session.
+
+  The webhook handler will set `users/{uid}.unlimited = true` upon successful payment and record payment details in `payments/`.
 
 Example Firestore security rules (basic):
 

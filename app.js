@@ -653,6 +653,26 @@ if (DOM.requestUnlimitedBtn) DOM.requestUnlimitedBtn.addEventListener('click', a
   }
 });
 
+// Purchase button handler (Stripe via functions)
+if (DOM.purchaseBtn) DOM.purchaseBtn.addEventListener('click', async () => {
+  if (!state.user || !state.user.uid) { showNotification('Sign in first to purchase', 'warning'); return; }
+  if (!FUNCTIONS_BASE) { showNotification('Purchase not available (functions not configured)', 'warning'); return; }
+  try {
+    const token = await firebase.auth().currentUser.getIdToken();
+    const resp = await fetch(`${FUNCTIONS_BASE}/createCheckoutSession`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Checkout creation failed');
+    if (data.sessionUrl) {
+      window.open(data.sessionUrl, '_blank');
+      showNotification('Opening Stripe Checkout...', 'success');
+    } else {
+      showNotification('Checkout session created', 'success');
+    }
+  } catch (err) {
+    showNotification(`Purchase failed: ${err.message}`, 'error');
+  }
+});
+
 if (DOM.signOutBtn) DOM.signOutBtn.addEventListener('click', () => signOutUser());
 
 // Functions base (can be set via FIREBASE_FUNCTIONS_BASE in index.html or env)
@@ -679,6 +699,25 @@ window.addEventListener('load', () => {
         state.user.remainingAttempts = s.remaining;
       }
     } catch (e) { /* ignore */ }
+
+    // enable purchase button if functions+stripe available
+    if (DOM.purchaseBtn) {
+      try {
+        if (FUNCTIONS_BASE && firebase && firebase.auth().currentUser) {
+          // quick probe: call createCheckoutSession with check-only=false but expect 501 or 400 if not configured fully
+          const token = firebase.auth().currentUser && await firebase.auth().currentUser.getIdToken();
+          const probe = await fetch(`${FUNCTIONS_BASE}/createCheckoutSession`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+          if (probe.status === 501 || probe.status === 400) {
+            // Stripe not fully configured, disable
+            DOM.purchaseBtn.disabled = true;
+          } else {
+            DOM.purchaseBtn.disabled = false;
+          }
+        } else {
+          DOM.purchaseBtn.disabled = true;
+        }
+      } catch (e) { DOM.purchaseBtn.disabled = true; }
+    }
 
     _updateAttemptsUI();
     _updateAuthUI();
