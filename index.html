@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="author" content="Ahmad Faour" />
+  <meta name="description" content="ImageCryptoLab — Client-side image conversion, Base64/Hex encoding, and AES/DES/TripleDES encryption. Secure, fast, and privacy-friendly image tools." />
+  <meta name="keywords" content="image conversion, image encryption, AES, DES, TripleDES, Base64, Hex, image converter, client-side encryption, ImageCryptoLab, image privacy, image compression, web tool" />
+  <meta property="og:title" content="ImageCryptoLab — Convert • Base64/Hex • AES/DES Encrypt/Decrypt" />
+  <meta property="og:description" content="Client-side image conversion and encryption tool. Convert to PNG/JPEG/WebP, encode to Base64/Hex, and encrypt files locally." />
+  <meta property="og:image" content="/assets/logo.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ImageCryptoLab" />
+  <meta name="twitter:description" content="Client-side image conversion and encryption tool — secure and privacy-first." />
+  <script type="application/ld+json">
+  {"@context": "https://schema.org","@type": "WebApplication","name":"ImageCryptoLab","author":{"@type":"Person","name":"Ahmad Faour"},"url":"https://yourusername.github.io/ImageCryptoLab","description":"Client-side tool for image conversion, encoding and encryption."}
+  </script>
   <title>ImageCryptoLab — Convert • Base64/Hex • AES/DES Encrypt/Decrypt</title>
   <link rel="icon" href="/assets/logo.svg" />
   <link rel="stylesheet" href="./styles.css" />
@@ -25,6 +36,7 @@
     <div class="auth">
       <button class="btn" id="signInBtn" type="button">Sign in (Google)</button>
       <button class="btn secondary" id="signOutBtn" type="button" style="display:none;">Sign out</button>
+      <button class="btn secondary" id="accountBtn" type="button" style="display:none;">Account</button>
       <div id="userBadge" class="userBadge" style="display:none;"></div>
     </div>
   </header>
@@ -425,6 +437,18 @@
       <div class="actions">
         <button class="btn secondary" id="authModalClose" type="button">Close</button>
         <button class="btn" id="authModalSignIn" type="button">Sign in with Google</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account modal -->
+  <div class="modal" id="accountModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="panel">
+      <h4>Account & Quota</h4>
+      <p id="accountInfo">Loading account info...</p>
+      <div style="margin-top:10px">
+        <button class="btn" id="requestUnlimitedBtn" type="button">Request Unlimited Access</button>
+        <button class="btn secondary" id="accountModalClose" type="button">Close</button>
       </div>
     </div>
   </div>

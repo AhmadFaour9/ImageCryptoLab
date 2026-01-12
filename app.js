@@ -66,7 +66,12 @@ const DOM = {
   decryptAttempts: document.getElementById("decryptAttempts"),
   authModal: document.getElementById("authModal"),
   authModalSignIn: document.getElementById("authModalSignIn"),
-  authModalClose: document.getElementById("authModalClose")
+  authModalClose: document.getElementById("authModalClose"),
+  accountBtn: document.getElementById("accountBtn"),
+  accountModal: document.getElementById("accountModal"),
+  accountModalClose: document.getElementById("accountModalClose"),
+  accountInfo: document.getElementById("accountInfo"),
+  requestUnlimitedBtn: document.getElementById("requestUnlimitedBtn")
 };
 
 // State
@@ -378,11 +383,55 @@ async function initAuthIfAvailable() {
 
   try {
     firebase.initializeApp(window.FIREBASE_CONFIG);
-    firebase.auth().onAuthStateChanged((u) => {
-      state.user = u ? { uid: u.uid, displayName: u.displayName, email: u.email } : null;
+
+    // Ensure Firestore is available
+    if (typeof firebase.firestore === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const s3 = document.createElement('script');
+        s3.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
+        s3.onload = resolve;
+        s3.onerror = reject;
+        document.head.appendChild(s3);
+      });
+    }
+
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    const db = firebase.firestore();
+
+    // Helper to fetch/create user doc
+    async function fetchUserDoc(uid) {
+      if (!db) return null;
+      const ref = db.collection('users').doc(uid);
+      const snap = await ref.get();
+      if (!snap.exists) {
+        const doc = { createdAt: firebase.firestore.FieldValue.serverTimestamp(), unlimited: false };
+        await ref.set(doc);
+        return { id: uid, ...doc, unlimited: false };
+      }
+      return { id: uid, ...snap.data() };
+    }
+
+    firebase.auth().onAuthStateChanged(async (u) => {
+      if (u) {
+        const userDoc = await fetchUserDoc(u.uid);
+        state.user = { uid: u.uid, displayName: u.displayName, email: u.email, unlimited: !!userDoc.unlimited };
+      } else {
+        state.user = null;
+      }
       _updateAuthUI();
       _updateAttemptsUI();
     });
+
+    // Request unlimited hook (writes a request document)
+    async function requestUnlimitedForUser(uid) {
+      if (!db) throw new Error('Firestore unavailable');
+      const reqRef = db.collection('requests').doc(uid);
+      await reqRef.set({ uid, requestedAt: firebase.firestore.FieldValue.serverTimestamp(), status: 'pending' });
+      return true;
+    }
+
+    // Attach to global for UI functions
+    window._icl_requestUnlimited = requestUnlimitedForUser;
   } catch (err) {
     console.warn('Firebase init failed', err);
   }
@@ -423,10 +472,12 @@ function _updateAuthUI() {
     }
     if (DOM.signInBtn) DOM.signInBtn.style.display = 'none';
     if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'inline-flex';
+    if (DOM.accountBtn) DOM.accountBtn.style.display = 'inline-flex';
   } else {
     if (DOM.userBadge) DOM.userBadge.style.display = 'none';
     if (DOM.signInBtn) DOM.signInBtn.style.display = 'inline-flex';
     if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'none';
+    if (DOM.accountBtn) DOM.accountBtn.style.display = 'none';
   }
 }
 
@@ -442,10 +493,40 @@ function hideAuthModal() {
   DOM.authModal.setAttribute('aria-hidden', 'true');
 }
 
-// Attach auth UI handlers
+function showAccountModal() {
+  if (!DOM.accountModal) return;
+  // populate info
+  const attemptsLeft = getAttemptsLeft();
+  const unlimited = state.user?.unlimited ? 'Yes' : 'No';
+  if (DOM.accountInfo) DOM.accountInfo.textContent = `User: ${state.user?.displayName || state.user?.email}\nUnlimited: ${unlimited}\nAttempts left: ${attemptsLeft}`;
+  DOM.accountModal.classList.add('show');
+  DOM.accountModal.setAttribute('aria-hidden', 'false');
+}
+
+function hideAccountModal() {
+  if (!DOM.accountModal) return;
+  DOM.accountModal.classList.remove('show');
+  DOM.accountModal.setAttribute('aria-hidden', 'true');
+}
+
+// Attach auth & account UI handlers
 if (DOM.signInBtn) DOM.signInBtn.addEventListener('click', () => showAuthModal());
 if (DOM.authModalClose) DOM.authModalClose.addEventListener('click', () => hideAuthModal());
 if (DOM.authModalSignIn) DOM.authModalSignIn.addEventListener('click', async () => { hideAuthModal(); await signInWithGoogle(); });
+if (DOM.signOutBtn) DOM.signOutBtn.addEventListener('click', () => signOutUser());
+if (DOM.accountBtn) DOM.accountBtn.addEventListener('click', () => showAccountModal());
+if (DOM.accountModalClose) DOM.accountModalClose.addEventListener('click', () => hideAccountModal());
+if (DOM.requestUnlimitedBtn) DOM.requestUnlimitedBtn.addEventListener('click', async () => {
+  if (!state.user || !state.user.uid) { showNotification('Sign in first to request unlimited access', 'warning'); return; }
+  try {
+    if (typeof window._icl_requestUnlimited !== 'function') throw new Error('Request facility not configured');
+    await window._icl_requestUnlimited(state.user.uid);
+    showNotification('Request submitted — admin will review', 'success');
+  } catch (err) {
+    showNotification(`Request failed: ${err.message}`, 'error');
+  }
+});
+
 if (DOM.signOutBtn) DOM.signOutBtn.addEventListener('click', () => signOutUser());
 
 // Initialize auth on load

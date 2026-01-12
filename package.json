@@ -13,6 +13,7 @@
     "test:browser": "node scripts/test-compatibility.js",
     "evaluate": "python evaluation/evaluate.py",
     "evaluate:ci": "python evaluation/evaluate.py --ci",
+    "test:ui": "npx playwright test scripts/playwright --project=chromium",
     "serve": "http-server -c-1 -o",
     "deploy": "npm run build && git add -A && git commit -m 'Build: Minified assets' && git push origin main"
   },

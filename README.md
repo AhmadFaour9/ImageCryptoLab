@@ -111,6 +111,34 @@ Steps:
 
 4. Deploy your site. The app will dynamically load Firebase SDKs and enable Google Sign-in. When a user signs in, their quota will be tied to their account.
 
+## Firestore: quota and unlimited access
+For reliable enforcement and to provide true "unlimited" accounts, configure Firestore and the `users` collection. The app will:
+- Create a `users/{uid}` document on first sign-in with a default `{ unlimited: false }` field.
+- Admins can set `unlimited: true` for specific users to grant unlimited decrypt attempts.
+- Users can click "Request Unlimited Access" in the Account modal; this writes a `requests/{uid}` document with `status: 'pending'` for admin review.
+
+Example Firestore security rules (basic):
+
+```js
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Only admins should write the 'unlimited' flag - restrict in your admin console
+      allow write: if false;
+    }
+    match /requests/{requestId} {
+      // Allow authenticated users to create/update their own request
+      allow create: if request.auth != null && request.auth.uid == requestId;
+      allow read, update: if request.auth.token.admin == true; // admin-only
+    }
+  }
+}
+```
+
+To grant a user unlimited access for testing, set `unlimited: true` in their `users/{uid}` doc via the Firebase Console.
+
 ---
 
 ## Testing
