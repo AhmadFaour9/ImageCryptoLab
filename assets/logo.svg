@@ -1,13 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40" role="img" aria-label="ImageCryptoLab logo">
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="ImageCryptoLab logo">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#4F46E5" />
       <stop offset="100%" stop-color="#06B6D4" />
     </linearGradient>
   </defs>
-  <rect rx="6" width="160" height="40" fill="#0f172a" />
-  <g transform="translate(8,6)">
+  <rect rx="6" width="40" height="40" fill="#0f172a" />
+  <g transform="translate(4,4)">
     <circle cx="12" cy="12" r="10" fill="url(#g)" />
-    <text x="36" y="18" font-family="Segoe UI, Roboto, Arial" font-size="14" fill="#fff">ImageCryptoLab</text>
+    <!-- Icon only (no text) to avoid duplicating header title -->
+    <g transform="translate(8,6) scale(0.9)">
+      <path d="M0 0 L6 0 L6 10 L0 10 Z" fill="rgba(255,255,255,0.02)" />
+    </g>
   </g>
 </svg>

@@ -89,6 +89,12 @@ body{
 
 .logo img { display:block; max-height:28px; width:auto; }
 
+/* Ensure header title doesn't overlap with logo on small screens */
+.brand { min-width: 0; }
+h1 { word-break: keep-all; }
+.header .brand > div { min-width: 0; }
+.header .brand h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 .logo:hover {
   border-color: rgba(122,162,255,.45);
   box-shadow: var(--glow);
