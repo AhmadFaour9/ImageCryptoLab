@@ -117,6 +117,12 @@ For reliable enforcement and to provide true "unlimited" accounts, configure Fir
 - Admins can set `unlimited: true` for specific users to grant unlimited decrypt attempts.
 - Users can click "Request Unlimited Access" in the Account modal; this writes a `requests/{uid}` document with `status: 'pending'` for admin review.
 
+To provide production-grade enforcement we include a small Cloud Functions API (see `functions/`) with endpoints for attempt checking and admin approvals:
+- `POST /checkAttempt?action=check|try` — atomically checks or increments the daily attempt counter for an authenticated user.
+- `POST /listPendingRequests` — admin-only listing of pending unlimited requests.
+- `POST /approveRequest` — admin-only endpoint to approve and set `users/{uid}.unlimited = true`.
+- `POST /createCheckoutSession` and `POST /stripeWebhook` — Stripe stubs to implement payments for unlimited access (configure `STRIPE_SECRET` to enable).
+
 Example Firestore security rules (basic):
 
 ```js
@@ -124,20 +130,29 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      // Only admins should write the 'unlimited' flag - restrict in your admin console
-      allow write: if false;
+      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.admin == true);
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.admin == true);
     }
     match /requests/{requestId} {
-      // Allow authenticated users to create/update their own request
+      // Allow authenticated users to create a request for their own uid
       allow create: if request.auth != null && request.auth.uid == requestId;
       allow read, update: if request.auth.token.admin == true; // admin-only
+    }
+    match /attemptCounts/{userId} {
+      // allow read for the user; writes should be performed by Cloud Functions (admin)
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
   }
 }
 ```
 
 To grant a user unlimited access for testing, set `unlimited: true` in their `users/{uid}` doc via the Firebase Console.
+
+Deployment notes:
+1. Install dependencies under `functions/` and deploy to Google Cloud Functions or your preferred Node host.
+2. Set `FIREBASE_FUNCTIONS_BASE` (e.g., `https://us-central1-YOUR_PROJECT.cloudfunctions.net`) in your site (before `app.js`) to have the client call the endpoints for attempt checks and admin approvals.
+3. Update Firestore rules (`firestore.rules`) and ensure admin claims are issued using the Firebase Admin SDK for admin accounts.
 
 ---
 

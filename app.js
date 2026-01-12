@@ -370,6 +370,11 @@ function _updateAttemptsUI() {
   if (DOM.miniQuota) {
     if (state.user && state.user.unlimited) {
       DOM.miniQuota.textContent = 'Unlimited';
+    } else if (state.user && typeof state.user.remainingAttempts !== 'undefined') {
+      DOM.miniQuota.classList.remove('mini-pop');
+      DOM.miniQuota.textContent = `Attempts left: ${state.user.remainingAttempts}`;
+      void DOM.miniQuota.offsetWidth; // reflow to restart animation
+      DOM.miniQuota.classList.add('mini-pop');
     } else {
       DOM.miniQuota.classList.remove('mini-pop');
       DOM.miniQuota.textContent = `Attempts left: ${getAttemptsLeft()}`;
@@ -577,15 +582,32 @@ async function showAccountModal() {
           btn.textContent = 'Approve';
           btn.addEventListener('click', async () => {
             try {
-              await window._icl_approveRequest(req.uid || req.id);
+              if (FUNCTIONS_BASE && firebase && firebase.auth().currentUser) {
+                // call server approve endpoint
+                const token = await firebase.auth().currentUser.getIdToken();
+                const resp = await fetch(`${FUNCTIONS_BASE}/approveRequest`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: req.uid || req.id }) });
+                const data = await resp.json();
+                if (!data.ok) throw new Error(data.error || 'Approve failed');
+              } else if (window._icl_approveRequest) {
+                await window._icl_approveRequest(req.uid || req.id);
+              } else {
+                throw new Error('Approve facility not available');
+              }
+
               showNotification('Request approved', 'success');
               // refresh list
-              const refreshed = await window._icl_fetchPendingRequests();
-              if (refreshed.length === 0) {
-                DOM.adminList.textContent = 'No pending requests';
+              if (FUNCTIONS_BASE && firebase && firebase.auth().currentUser) {
+                const token = await firebase.auth().currentUser.getIdToken();
+                const refreshedResp = await fetch(`${FUNCTIONS_BASE}/listPendingRequests`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+                const refreshed = await refreshedResp.json();
+                if (refreshed && refreshed.ok && refreshed.data.length === 0) {
+                  DOM.adminList.textContent = 'No pending requests';
+                } else {
+                  showAccountModal();
+                }
               } else {
-                // simple refresh
-                showAccountModal();
+                const refreshed = await window._icl_fetchPendingRequests();
+                if (refreshed.length === 0) DOM.adminList.textContent = 'No pending requests'; else showAccountModal();
               }
             } catch (err) {
               showNotification(`Approve failed: ${err.message}`, 'error');
@@ -633,9 +655,31 @@ if (DOM.requestUnlimitedBtn) DOM.requestUnlimitedBtn.addEventListener('click', a
 
 if (DOM.signOutBtn) DOM.signOutBtn.addEventListener('click', () => signOutUser());
 
+// Functions base (can be set via FIREBASE_FUNCTIONS_BASE in index.html or env)
+const FUNCTIONS_BASE = window.FIREBASE_FUNCTIONS_BASE || window.FUNCTIONS_BASE || '';
+
+async function serverCheckAttempt(action = 'try') {
+  if (!FUNCTIONS_BASE) throw new Error('Functions endpoint not configured');
+  if (!firebase || !firebase.auth().currentUser) throw new Error('Not authenticated');
+  const token = await firebase.auth().currentUser.getIdToken();
+  const url = `${FUNCTIONS_BASE}/checkAttempt?action=${encodeURIComponent(action)}`;
+  const r = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+  const data = await r.json();
+  if (!data.ok) throw new Error(data.error || 'Function call failed');
+  return data;
+}
+
 // Initialize auth on load
 window.addEventListener('load', () => {
-  initAuthIfAvailable().then(() => {
+  initAuthIfAvailable().then(async () => {
+    // for signed-in users, attempt to fetch server-side attempt status
+    try {
+      if (state.user && FUNCTIONS_BASE) {
+        const s = await serverCheckAttempt('check');
+        state.user.remainingAttempts = s.remaining;
+      }
+    } catch (e) { /* ignore */ }
+
     _updateAttemptsUI();
     _updateAuthUI();
     layoutResponsive();
@@ -1175,21 +1219,34 @@ DOM.decryptBtn.addEventListener("click", async () => {
   }
 
   // Check attempt limits
-  if (isBlocked()) {
-    if (!state.user) {
-      showAuthModal();
-      return;
-    } else {
-      const until = getBlockedUntil();
-      const remaining = Math.max(0, until - Date.now());
-      const hours = Math.ceil(remaining / (60 * 60 * 1000));
-      showNotification(`No attempts left. Come back in ${hours} hour(s).`, 'warning');
+  if (state.user) {
+    // signed-in: consult server (if available)
+    try {
+      if (FUNCTIONS_BASE) {
+        const resp = await serverCheckAttempt('try');
+        if (!resp.allowed) {
+          const until = resp.windowResetAt || 0;
+          const hours = Math.ceil(Math.max(0, until - Date.now()) / (60 * 60 * 1000));
+          showNotification(`No attempts left. Come back in ${hours} hour(s).`, 'warning');
+          return;
+        }
+        // reflect remaining attempts from server
+        state.user.remainingAttempts = resp.remaining;
+        _updateAttemptsUI();
+      } else {
+        // If server not configured fall back to client-side local attempt tracking per-user
+        if (isBlocked()) { showNotification('No attempts left. Sign in required for administrative help.', 'warning'); return; }
+        incrementAttempt();
+      }
+    } catch (err) {
+      showNotification(`Attempt check failed: ${err.message}`, 'error');
       return;
     }
+  } else {
+    // anonymous user: local attempts
+    if (isBlocked()) { showAuthModal(); return; }
+    incrementAttempt();
   }
-
-  // Record attempt (will reset on success)
-  incrementAttempt();
 
   try {
     state.isProcessing = true;

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin — ImageCryptoLab</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h2>Admin Dashboard</h2>
+      <div id="status" class="meta">Loading...</div>
+      <div id="pendingList">Checking for pending requests...</div>
+    </section>
+  </main>
+  <script>
+  async function init() {
+    if (!window.FIREBASE_CONFIG) {
+      document.getElementById('status').textContent = 'Firebase not configured - see README to set up admin flow.';
+      return;
+    }
+
+    // Use Firebase SDK if available; otherwise instruct
+    if (typeof firebase === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
+      document.head.appendChild(s);
+      const s2 = document.createElement('script');
+      s2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
+      document.head.appendChild(s2);
+      s2.onload = () => { firebase.initializeApp(window.FIREBASE_CONFIG); checkLogin(); };
+      return;
+    }
+
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    checkLogin();
+  }
+
+  async function checkLogin() {
+    firebase.auth().onAuthStateChanged(async (u) => {
+      if (!u) {
+        document.getElementById('status').innerHTML = '<button id="signin">Sign in (Google)</button>';
+        document.getElementById('signin').addEventListener('click', async () => {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await firebase.auth().signInWithPopup(provider);
+        });
+        return;
+      }
+      const token = await u.getIdTokenResult();
+      if (!token.claims || !token.claims.admin) {
+        document.getElementById('status').textContent = 'Not an admin (admin claim required)';
+        return;
+      }
+
+      document.getElementById('status').textContent = `Signed in as admin: ${u.email}`;
+      loadPending();
+    });
+  }
+
+  async function loadPending() {
+    document.getElementById('pendingList').textContent = 'Loading...';
+    try {
+      // Prefer calling server function if configured
+      const base = window.FIREBASE_FUNCTIONS_BASE || '';
+      const user = firebase.auth().currentUser;
+      const token = await user.getIdToken();
+      if (base) {
+        const resp = await fetch(`${base}/listPendingRequests`, {
+          method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        });
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || 'Failed');
+        renderPending(data.data);
+        return;
+      }
+
+      // Fallback: call client-side helper
+      if (window._icl_fetchPendingRequests) {
+        const pending = await window._icl_fetchPendingRequests();
+        renderPending(pending);
+      } else {
+        document.getElementById('pendingList').textContent = 'No server helper available.';
+      }
+    } catch (err) {
+      document.getElementById('pendingList').textContent = 'Failed to load: ' + err.message;
+    }
+  }
+
+  function renderPending(list) {
+    const c = document.getElementById('pendingList');
+    if (!list || list.length === 0) { c.textContent = 'No pending requests'; return; }
+    c.textContent = '';
+    list.forEach(req => {
+      const div = document.createElement('div');
+      div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.padding = '6px 0';
+      div.innerHTML = `<div><strong>${req.uid || req.id}</strong> — ${new Date(req.requestedAt?.toDate ? req.requestedAt.toDate() : (req.requestedAt||'')).toLocaleString()}</div>`;
+      const btn = document.createElement('button'); btn.className='btn'; btn.textContent='Approve';
+      btn.addEventListener('click', async () => {
+        await approve(req.uid || req.id);
+        loadPending();
+      });
+      div.appendChild(btn);
+      c.appendChild(div);
+    });
+  }
+
+  async function approve(uid) {
+    const base = window.FIREBASE_FUNCTIONS_BASE || '';
+    const user = firebase.auth().currentUser;
+    const token = await user.getIdToken();
+    if (base) {
+      const resp = await fetch(`${base}/approveRequest`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ uid }) });
+      const data = await resp.json();
+      if (!data.ok) throw new Error(data.error || 'Approve failed');
+      alert('Approved');
+      return;
+    }
+    // fallback to client helper
+    await window._icl_approveRequest(uid);
+    alert('Approved (client-side)');
+  }
+
+  init();
+  </script>
+</body>
+</html>

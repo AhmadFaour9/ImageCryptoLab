@@ -1,0 +1,23 @@
+name: Playwright UI Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+      - name: Start static server
+        run: npx http-server -p 8000 & sleep 1
+      - name: Run Playwright tests
+        run: npx playwright test scripts/playwright --project=chromium

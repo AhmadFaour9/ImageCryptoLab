@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users document: only user themselves or admin can read/write limited fields
+    match /users/{userId} {
+      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.admin == true);
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.admin == true);
+    }
+
+    // Requests: users can create a request for their UID; admins can read/update
+    match /requests/{requestId} {
+      allow create: if request.auth != null && request.auth.uid == requestId;
+      allow read, update: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // attemptCounts: only server/authorized cloud functions (admin) should modify counts
+    match /attemptCounts/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // default: deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
