@@ -86,7 +86,11 @@ const DOM = {
   dropZone: document.getElementById("dropZone"),
   dropZoneProxy: document.getElementById("dropZoneProxy"),
   adminPreview: document.getElementById("adminPreview"),
-  adminList: document.getElementById("adminList")
+  adminList: document.getElementById("adminList"),
+  miniAccount: document.getElementById("miniAccount"),
+  miniAvatar: document.getElementById("miniAvatar"),
+  miniName: document.getElementById("miniName"),
+  miniQuota: document.getElementById("miniQuota")
 };
 
 // State
@@ -526,6 +530,7 @@ async function initAuthIfAvailable() {
           uid: u.uid,
           displayName: u.displayName,
           email: u.email,
+          photoURL: u.photoURL,
           unlimited: !!userDoc.unlimited,
           enabled: (u.emailVerified || !!userDoc.enabled)
         };
@@ -653,6 +658,9 @@ function _updateAuthUI() {
     if (DOM.miniAccount) {
       DOM.miniAccount.style.display = 'flex';
       if (DOM.miniName) DOM.miniName.textContent = name;
+      if (DOM.miniAvatar && state.user.photoURL) {
+        DOM.miniAvatar.src = state.user.photoURL;
+      }
       if (DOM.miniQuota) {
         const quotaText = state.user.unlimited ? 'Unlimited Access ✨' : `Quota: ${state.user.remainingAttempts ?? getAttemptsLeft()} left`;
         DOM.miniQuota.textContent = quotaText;
