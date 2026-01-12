@@ -22,6 +22,11 @@
       </div>
     </div>
     <div class="pill">Runs 100% in your browser — suitable for GitHub Pages</div>
+    <div class="auth">
+      <button class="btn" id="signInBtn" type="button">Sign in (Google)</button>
+      <button class="btn secondary" id="signOutBtn" type="button" style="display:none;">Sign out</button>
+      <div id="userBadge" class="userBadge" style="display:none;"></div>
+    </div>
   </header>
 
   <main class="wrap">
@@ -321,6 +326,7 @@
           <div class="alignEnd">
             <button class="btn" id="decryptBtn" type="button">Decrypt</button>
           </div>
+          <div class="meta" id="decryptAttempts">Attempts left: 5</div>
 
           <div></div>
         </div>
@@ -410,6 +416,19 @@
         <small>Author: Ahmad Faour — <a href="https://github.com/AhmadFaour9">GitHub</a></small>
       </div>
     </footer>
+
+  <!-- Auth modal -->
+  <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="panel">
+      <h4>Sign in to continue</h4>
+      <p>You've reached the free attempt limit. Sign in with Google to continue using decrypt attempts (resets daily).</p>
+      <div class="actions">
+        <button class="btn secondary" id="authModalClose" type="button">Close</button>
+        <button class="btn" id="authModalSignIn" type="button">Sign in with Google</button>
+      </div>
+    </div>
+  </div>
+
   </main>
 </body>
 </html>

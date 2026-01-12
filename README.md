@@ -33,6 +33,17 @@ A lightweight, client-side web application for image processing, encoding, and e
 - ✅ **Optimized assets** (70%+ size reduction)
 - ✅ **Comprehensive testing** (47 automated tests)
 
+## 🔐 Auth & Attempt Limits
+To protect against mass guessing or brute-force attempts on decrypt operations, the app includes a basic quota system:
+
+- **Anonymous users (no sign-in)** get **5 decrypt attempts per 24 hours** tied to their browser session (localStorage).
+- After exhausting the 5 attempts, users are prompted to **sign in with Google** to continue using decrypt attempts.
+- **Signed-in users** are also limited to **5 daily decrypt attempts** (tracked per user in localStorage for this demo). For production, use a server-side store (e.g., Firestore) for reliable enforcement.
+- A successful decryption will **reset** the attempt counter for that user/session.
+
+To enable Google Sign-in for your deployment, see the `AUTH` section below and follow the Firebase setup steps.
+
+
 ## Browser Support
 
 | Browser | Min Version | Status |
@@ -76,6 +87,31 @@ git push -u origin main
 # 3. Done! Your site is live at:
 # https://yourusername.github.io/ImageCryptoLab
 ```
+
+## Authentication Setup
+
+This project supports optional Google Sign-in (via Firebase) to track per-user quotas for decrypt attempts.
+
+Steps:
+1. Create a Firebase project at https://console.firebase.google.com/ and add a new **Web App**.
+2. Enable **Authentication → Sign-in method → Google**.
+3. Copy the Firebase config object and add it to your site. Example (place before `app.js`):
+
+```html
+<script>
+  // Replace with your Firebase config
+  window.FIREBASE_CONFIG = {
+    apiKey: "...",
+    authDomain: "...",
+    projectId: "...",
+    // rest of config
+  };
+</script>
+```
+
+4. Deploy your site. The app will dynamically load Firebase SDKs and enable Google Sign-in. When a user signs in, their quota will be tied to their account.
+
+---
 
 ## Testing
 

@@ -23,3 +23,4 @@
 {"test_id": "dec_002", "test_type": "decryption", "algorithm": "AES", "passphrase": "WrongPass", "has_correct_pass": false, "expected_behavior": "Should fail or show error with wrong passphrase"}
 {"test_id": "perf_001", "test_type": "performance", "metric": "load_time", "expected_behavior": "Page should load in under 3 seconds"}
 {"test_id": "perf_002", "test_type": "performance", "metric": "conversion_speed", "file_size_mb": 10, "expected_behavior": "Should convert 10MB image in under 5 seconds"}
+{"test_id": "ui_006", "test_type": "security", "action": "decrypt_attempt_limit", "expected_behavior": "Anonymous users blocked after 5 attempts; on block the UI prompts sign-in; signed-in users also have 5 attempts/day."}

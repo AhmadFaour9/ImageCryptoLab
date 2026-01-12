@@ -187,7 +187,7 @@ The evaluation uses 20 test cases in `test_dataset.jsonl`:
 | img_001-003 | Conversion | 3 | Format support |
 | img_004-006 | Resize | 3 | Aspect ratio |
 | enc_006-007 | Encoding | 2 | Base64/Hex |
-| ui_001-005 | UI | 5 | Functionality |
+| ui_001-006 | UI/Security | 6 | Functionality & attempt limiter (decrypt attempts limit) |
 | dec_001-002 | Decryption | 2 | Password handling |
 | perf_001-002 | Performance | 2 | Speed metrics |
 

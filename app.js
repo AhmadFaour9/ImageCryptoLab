@@ -58,7 +58,15 @@ const DOM = {
   downloadDecBtn: document.getElementById("downloadDecBtn"),
   useAsCurrentBtn: document.getElementById("useAsCurrentBtn"),
   decPreviewImg: document.getElementById("decPreviewImg"),
-  decPreviewPlaceholder: document.getElementById("decPreviewPlaceholder")
+  decPreviewPlaceholder: document.getElementById("decPreviewPlaceholder"),
+  // Auth and attempt UI
+  signInBtn: document.getElementById("signInBtn"),
+  signOutBtn: document.getElementById("signOutBtn"),
+  userBadge: document.getElementById("userBadge"),
+  decryptAttempts: document.getElementById("decryptAttempts"),
+  authModal: document.getElementById("authModal"),
+  authModalSignIn: document.getElementById("authModalSignIn"),
+  authModalClose: document.getElementById("authModalClose")
 };
 
 // State
@@ -253,6 +261,197 @@ function wordArrayToBytes(wordArray) {
   }
   return bytes;
 }
+
+// ============================================================================
+// ATTEMPT LIMITER & AUTH HOOKS
+// ============================================================================
+
+const ATTEMPT_OPTIONS = {
+  maxAttempts: 5,
+  windowMs: 24 * 60 * 60 * 1000 // 24 hours
+};
+
+// Add user field to state
+state.user = null;
+
+function _getAttemptKey() {
+  return state.user && state.user.uid ? `icl_attempts_uid_${state.user.uid}` : 'icl_attempts_anon';
+}
+
+function _loadAttempts() {
+  const key = _getAttemptKey();
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return { count: 0, firstTs: 0 };
+    const rec = JSON.parse(raw);
+    // Validate
+    if (!rec.firstTs || !rec.count) return { count: 0, firstTs: 0 };
+    return rec;
+  } catch (e) {
+    return { count: 0, firstTs: 0 };
+  }
+}
+
+function _saveAttempts(rec) {
+  const key = _getAttemptKey();
+  localStorage.setItem(key, JSON.stringify(rec));
+}
+
+function _isExpired(rec) {
+  if (!rec || !rec.firstTs) return true;
+  return (Date.now() - rec.firstTs) > ATTEMPT_OPTIONS.windowMs;
+}
+
+function resetAttempts() {
+  const rec = { count: 0, firstTs: 0 };
+  _saveAttempts(rec);
+  _updateAttemptsUI();
+}
+
+function incrementAttempt() {
+  let rec = _loadAttempts();
+  if (_isExpired(rec)) rec = { count: 0, firstTs: 0 };
+  rec.count = (rec.count || 0) + 1;
+  if (!rec.firstTs) rec.firstTs = Date.now();
+  _saveAttempts(rec);
+  _updateAttemptsUI();
+  return rec;
+}
+
+function getAttemptsLeft() {
+  const rec = _loadAttempts();
+  if (_isExpired(rec)) return ATTEMPT_OPTIONS.maxAttempts;
+  return Math.max(0, ATTEMPT_OPTIONS.maxAttempts - (rec.count || 0));
+}
+
+function isBlocked() {
+  const rec = _loadAttempts();
+  if (_isExpired(rec)) return false;
+  return (rec.count || 0) >= ATTEMPT_OPTIONS.maxAttempts;
+}
+
+function getBlockedUntil() {
+  const rec = _loadAttempts();
+  if (!rec.firstTs) return 0;
+  return rec.firstTs + ATTEMPT_OPTIONS.windowMs;
+}
+
+function _updateAttemptsUI() {
+  if (!DOM.decryptAttempts) return;
+  const left = getAttemptsLeft();
+  if (left > 0) {
+    DOM.decryptAttempts.textContent = `Attempts left: ${left}`;
+    DOM.decryptBtn.disabled = false;
+  } else {
+    const until = getBlockedUntil();
+    const remainingMs = Math.max(0, until - Date.now());
+    const hours = Math.ceil(remainingMs / (60 * 60 * 1000));
+    DOM.decryptAttempts.textContent = `No attempts left. ${hours} hour(s) until reset.`;
+    DOM.decryptBtn.disabled = true;
+  }
+}
+
+// Auth helpers (Firebase optional - requires config)
+async function initAuthIfAvailable() {
+  if (!window.FIREBASE_CONFIG) {
+    // Sign-in disabled — provide hint in UI
+    if (DOM.signInBtn) DOM.signInBtn.disabled = false; // allow the modal to show instructions
+    return;
+  }
+
+  // Dynamically load firebase compat SDKs if not present
+  if (typeof firebase === 'undefined') {
+    await new Promise((resolve, reject) => {
+      const s1 = document.createElement('script');
+      s1.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+      s1.onload = () => {
+        const s2 = document.createElement('script');
+        s2.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js';
+        s2.onload = resolve;
+        s2.onerror = reject;
+        document.head.appendChild(s2);
+      };
+      s1.onerror = reject;
+      document.head.appendChild(s1);
+    });
+  }
+
+  try {
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    firebase.auth().onAuthStateChanged((u) => {
+      state.user = u ? { uid: u.uid, displayName: u.displayName, email: u.email } : null;
+      _updateAuthUI();
+      _updateAttemptsUI();
+    });
+  } catch (err) {
+    console.warn('Firebase init failed', err);
+  }
+}
+
+async function signInWithGoogle() {
+  if (typeof firebase === 'undefined') {
+    showNotification('Auth is not configured. See README for setup.', 'warning');
+    return;
+  }
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await firebase.auth().signInWithPopup(provider);
+    showNotification('Signed in successfully', 'success');
+  } catch (err) {
+    showNotification(`Sign-in failed: ${err.message}`, 'error');
+  }
+}
+
+async function signOutUser() {
+  if (typeof firebase === 'undefined') {
+    showNotification('Auth is not configured.', 'warning');
+    return;
+  }
+  try {
+    await firebase.auth().signOut();
+    showNotification('Signed out', 'success');
+  } catch (err) {
+    showNotification(`Sign-out failed: ${err.message}`, 'error');
+  }
+}
+
+function _updateAuthUI() {
+  if (state.user) {
+    if (DOM.userBadge) {
+      DOM.userBadge.style.display = 'block';
+      DOM.userBadge.textContent = `${state.user.displayName || state.user.email}`;
+    }
+    if (DOM.signInBtn) DOM.signInBtn.style.display = 'none';
+    if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'inline-flex';
+  } else {
+    if (DOM.userBadge) DOM.userBadge.style.display = 'none';
+    if (DOM.signInBtn) DOM.signInBtn.style.display = 'inline-flex';
+    if (DOM.signOutBtn) DOM.signOutBtn.style.display = 'none';
+  }
+}
+
+function showAuthModal() {
+  if (!DOM.authModal) return;
+  DOM.authModal.classList.add('show');
+  DOM.authModal.setAttribute('aria-hidden', 'false');
+}
+
+function hideAuthModal() {
+  if (!DOM.authModal) return;
+  DOM.authModal.classList.remove('show');
+  DOM.authModal.setAttribute('aria-hidden', 'true');
+}
+
+// Attach auth UI handlers
+if (DOM.signInBtn) DOM.signInBtn.addEventListener('click', () => showAuthModal());
+if (DOM.authModalClose) DOM.authModalClose.addEventListener('click', () => hideAuthModal());
+if (DOM.authModalSignIn) DOM.authModalSignIn.addEventListener('click', async () => { hideAuthModal(); await signInWithGoogle(); });
+if (DOM.signOutBtn) DOM.signOutBtn.addEventListener('click', () => signOutUser());
+
+// Initialize auth on load
+window.addEventListener('load', () => {
+  initAuthIfAvailable().then(() => _updateAttemptsUI());
+});
 
 // ============================================================================
 // EVENT LISTENERS - FILE OPERATIONS
@@ -751,6 +950,23 @@ DOM.decryptBtn.addEventListener("click", async () => {
     return;
   }
 
+  // Check attempt limits
+  if (isBlocked()) {
+    if (!state.user) {
+      showAuthModal();
+      return;
+    } else {
+      const until = getBlockedUntil();
+      const remaining = Math.max(0, until - Date.now());
+      const hours = Math.ceil(remaining / (60 * 60 * 1000));
+      showNotification(`No attempts left. Come back in ${hours} hour(s).`, 'warning');
+      return;
+    }
+  }
+
+  // Record attempt (will reset on success)
+  incrementAttempt();
+
   try {
     state.isProcessing = true;
     if (typeof CryptoJS === 'undefined') {
@@ -841,6 +1057,9 @@ DOM.decryptBtn.addEventListener("click", async () => {
     }
 
     DOM.decMeta.textContent = `Decrypted: ${state.decryptedBytes.length} bytes | Format: ${mime}`;
+
+    // Successful decryption: reset attempt counter
+    resetAttempts();
 
     // Enable output buttons
     DOM.downloadDecBtn.disabled = false;
