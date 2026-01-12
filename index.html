@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ImageCryptoLab — Convert • Base64/Hex • AES/DES Encrypt/Decrypt</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <!-- CryptoJS (AES/DES) via CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="wrap header">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">🧪</div>
+      <div>
+        <h1>ImageCryptoLab</h1>
+        <p class="sub">Convert images • Extract Base64/Hex • Encrypt/Decrypt with AES or DES (client‑side)</p>
+      </div>
+    </div>
+    <div class="pill">Runs 100% in your browser — suitable for GitHub Pages</div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <h2>1) Pick an image</h2>
+      <div class="grid2">
+        <div>
+          <label class="btn">
+            <input id="fileInput" type="file" accept="image/*" />
+            Choose image
+          </label>
+          <div class="meta" id="fileMeta">No file selected</div>
+
+          <div class="row gap">
+            <button class="btn secondary" id="clearBtn" type="button">Clear</button>
+            <button class="btn secondary" id="downloadOriginalBtn" type="button" disabled>Download original</button>
+          </div>
+
+          <div class="notice">
+            <strong>Note:</strong> “Convert between all types” isn’t possible in pure browser‑only code.
+            This app supports converting to <code>PNG</code>, <code>JPEG</code>, or <code>WebP</code> using Canvas.
+            It can still read many image inputs that your browser can decode (PNG/JPEG/WebP/GIF/BMP/SVG, etc.).
+          </div>
+        </div>
+
+        <div class="preview">
+          <div class="previewBox">
+            <img id="previewImg" alt="Preview" />
+            <div class="placeholder" id="previewPlaceholder">Preview appears here</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2) Tools</h2>
+
+      <div class="tabs" role="tablist" aria-label="Tools tabs">
+        <button class="tab active" data-tab="convert" role="tab" aria-selected="true">Convert</button>
+        <button class="tab" data-tab="encode" role="tab" aria-selected="false">Base64 / Hex</button>
+        <button class="tab" data-tab="encrypt" role="tab" aria-selected="false">Encrypt</button>
+        <button class="tab" data-tab="decrypt" role="tab" aria-selected="false">Decrypt</button>
+      </div>
+
+      <!-- Convert -->
+      <div class="panel show" id="panel-convert" role="tabpanel">
+        <h3>Convert image format (PNG / JPEG / WebP)</h3>
+        <div class="grid3">
+          <div>
+            <label>Output format</label>
+            <select id="outFormat">
+              <option value="image/png">PNG (.png)</option>
+              <option value="image/jpeg">JPEG (.jpg)</option>
+              <option value="image/webp">WebP (.webp)</option>
+            </select>
+          </div>
+          <div>
+            <label>Quality (JPEG/WebP)</label>
+            <input id="outQuality" type="range" min="0" max="1" step="0.01" value="0.92" />
+            <div class="meta"><span id="qualityLabel">0.92</span></div>
+          </div>
+          <div class="alignEnd">
+            <button class="btn" id="convertBtn" type="button" disabled>Convert & download</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h3>Resize (optional) before converting</h3>
+        <div class="grid3">
+          <div>
+            <label>Width (px)</label>
+            <input id="resizeW" type="number" min="1" placeholder="auto" />
+          </div>
+          <div>
+            <label>Height (px)</label>
+            <input id="resizeH" type="number" min="1" placeholder="auto" />
+          </div>
+          <div class="alignEnd">
+            <button class="btn secondary" id="applyResizeBtn" type="button" disabled>Apply resize to preview</button>
+          </div>
+        </div>
+        <div class="meta">Tip: leave one of width/height empty to keep aspect ratio.</div>
+
+        <div class="divider"></div>
+
+        <h3>Auto-compression</h3>
+        <div class="grid3">
+          <div>
+            <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
+              <input type="checkbox" id="autoCompress" style="width: auto; padding: 0; border: none; margin: 0;" />
+              <span>Auto-compress image</span>
+            </label>
+            <div class="meta">Reduces file size using optimal quality</div>
+          </div>
+          <div>
+            <label>Target max size (KB)</label>
+            <input id="maxSize" type="number" min="10" max="10000" value="500" />
+          </div>
+          <div class="alignEnd">
+            <div id="compressionInfo" class="meta"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Encode -->
+      <div class="panel" id="panel-encode" role="tabpanel">
+        <h3>Base64 + Hex for the current file bytes</h3>
+        <div class="row gap wrapRow">
+          <button class="btn" id="makeBase64Btn" type="button" disabled>Generate Base64</button>
+          <button class="btn" id="makeHexBtn" type="button" disabled>Generate Hex</button>
+          <button class="btn secondary" id="copyEncodeBtn" type="button" disabled>Copy output</button>
+          <button class="btn secondary" id="downloadEncodeBtn" type="button" disabled>Download output (.txt)</button>
+        </div>
+        <label class="mt">Output</label>
+        <textarea id="encodeOut" spellcheck="false" placeholder="Base64 or Hex will appear here..."></textarea>
+        <div class="meta" id="encodeMeta"></div>
+      </div>
+
+      <!-- Encrypt -->
+      <div class="panel" id="panel-encrypt" role="tabpanel">
+        <h3>Encrypt file bytes (AES or DES) — client‑side</h3>
+
+        <div class="grid3">
+          <div>
+            <label>Algorithm</label>
+            <select id="encAlg">
+              <option value="AES">AES</option>
+              <option value="DES">DES</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Passphrase</label>
+            <input id="encPass" type="password" placeholder="Enter passphrase" />
+          </div>
+
+          <div class="alignEnd">
+            <button class="btn" id="encryptBtn" type="button" disabled>Encrypt</button>
+          </div>
+        </div>
+
+        <div class="grid3 mt">
+          <div>
+            <label>Output encoding</label>
+            <select id="encOutFmt">
+              <option value="base64">Base64</option>
+              <option value="hex">Hex</option>
+            </select>
+          </div>
+          <div class="alignEnd">
+            <button class="btn secondary" id="copyEncBtn" type="button" disabled>Copy ciphertext</button>
+          </div>
+          <div class="alignEnd">
+            <button class="btn secondary" id="downloadEncBtn" type="button" disabled>Download ciphertext (.txt)</button>
+          </div>
+        </div>
+
+        <label class="mt">Ciphertext</label>
+        <textarea id="encOut" spellcheck="false" placeholder="Ciphertext will appear here..."></textarea>
+
+        <div class="notice">
+          Uses CryptoJS passphrase encryption (OpenSSL‑compatible salted format for Base64 output).
+          Keep the same algorithm + passphrase to decrypt.
+        </div>
+      </div>
+
+      <!-- Decrypt -->
+      <div class="panel" id="panel-decrypt" role="tabpanel">
+        <h3>Decrypt ciphertext back to bytes</h3>
+
+        <div class="grid3">
+          <div>
+            <label>Algorithm</label>
+            <select id="decAlg">
+              <option value="AES">AES</option>
+              <option value="DES">DES</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Passphrase</label>
+            <input id="decPass" type="password" placeholder="Enter passphrase" />
+          </div>
+
+          <div class="alignEnd">
+            <button class="btn" id="decryptBtn" type="button">Decrypt</button>
+          </div>
+        </div>
+
+        <div class="grid3 mt">
+          <div>
+            <label>Ciphertext encoding</label>
+            <select id="decInFmt">
+              <option value="base64">Base64</option>
+              <option value="hex">Hex</option>
+            </select>
+          </div>
+          <div class="alignEnd">
+            <button class="btn secondary" id="downloadDecBtn" type="button" disabled>Download decrypted bytes</button>
+          </div>
+          <div class="alignEnd">
+            <button class="btn secondary" id="useAsCurrentBtn" type="button" disabled>Use decrypted as current</button>
+          </div>
+        </div>
+
+        <label class="mt">Paste ciphertext</label>
+        <textarea id="decIn" spellcheck="false" placeholder="Paste Base64 or Hex ciphertext here..."></textarea>
+        <div class="meta" id="decMeta"></div>
+
+        <div class="divider"></div>
+
+        <h3>Decrypted preview (if it looks like an image)</h3>
+        <div class="preview">
+          <div class="previewBox">
+            <img id="decPreviewImg" alt="Decrypted preview" />
+            <div class="placeholder" id="decPreviewPlaceholder">Decrypted preview appears here</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="card">
+      <h2>3) Deploy to GitHub Pages</h2>
+      <ol class="steps">
+        <li>Create a new GitHub repository (public is easiest for Pages).</li>
+        <li>Upload the files from this zip (or push with git).</li>
+        <li>In GitHub: <span class="kbd">Settings</span> → <span class="kbd">Pages</span> → Source: <span class="kbd">Deploy from a branch</span> → Branch: <span class="kbd">main</span> / <span class="kbd">root</span>.</li>
+        <li>Wait for Pages to publish, then open the provided URL.</li>
+      </ol>
+      <div class="notice">
+        No backend required. Everything runs locally in the browser. Do not use this for highly sensitive data.
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Made for GitHub Pages • Vanilla HTML/CSS/JS • CryptoJS AES/DES</span>
+    </footer>
+  </main>
+</body>
+</html>

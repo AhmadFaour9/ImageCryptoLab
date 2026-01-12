@@ -1,0 +1,40 @@
+{
+  "name": "imagecryptolab",
+  "version": "2.0.0",
+  "description": "Client-side image encryption, conversion, and processing tool",
+  "main": "app.js",
+  "scripts": {
+    "build": "npm run minify:css && npm run minify:js",
+    "minify:css": "node scripts/minify-css.js",
+    "minify:js": "node scripts/minify-js.js",
+    "test": "node scripts/test-runner.js",
+    "test:encryption": "node scripts/test-encryption.js",
+    "test:validation": "node scripts/test-validation.js",
+    "test:browser": "node scripts/test-compatibility.js",
+    "serve": "http-server -c-1 -o",
+    "deploy": "npm run build && git add -A && git commit -m 'Build: Minified assets' && git push origin main"
+  },
+  "keywords": [
+    "image",
+    "encryption",
+    "conversion",
+    "aes",
+    "des",
+    "base64",
+    "hex"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "clean-css": "^5.3.2",
+    "terser": "^5.20.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "homepage": "https://yourusername.github.io/ImageCryptoLab",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ImageCryptoLab.git"
+  }
+}
