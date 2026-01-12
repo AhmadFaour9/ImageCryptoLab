@@ -18,8 +18,8 @@
   <title>ImageCryptoLab — Convert • Base64/Hex • AES/DES Encrypt/Decrypt</title>
   <link rel="icon" href="/assets/logo.svg" />
   <link rel="stylesheet" href="./styles.css" />
-  <!-- CryptoJS (AES/DES) via CDN -->
-  <script defer src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
+  <!-- CryptoJS (AES/DES) Local -->
+  <script defer src="./assets/js/crypto-js.min.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
@@ -356,17 +356,11 @@
         <label class="mt">Decryption Parameters</label>
         <textarea id="decInfo" spellcheck="false" readonly placeholder="Decryption parameters and result will appear here..."></textarea>
 
-        <div id="decryptAttempts" class="meta">Attempts left: 5</div>
+        
 
         <div class="grid2 mt">
           <button class="btn secondary" id="downloadDecBtn" type="button" disabled>Download decrypted file</button>
           <button class="btn secondary" id="useAsCurrentBtn" type="button" disabled>Use as current file</button>
-        </div>
-
-        <label class="mt">Decrypted Preview</label>
-        <div class="preview">
-          <img id="decPreviewImg" style="display: none; max-width: 100%; max-height: 200px; border-radius: 4px;" />
-          <div id="decPreviewPlaceholder" style="color: #999; padding: 20px; text-align: center;">Preview will appear here...</div>
         </div>
 
         <div id="decMeta" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -380,16 +374,6 @@
           • Save encryption parameters securely for future decryption
         </div>
       </div>
-            <button class="btn secondary" id="downloadDecBtn" type="button" disabled>Download decrypted bytes</button>
-          </div>
-          <div class="alignEnd">
-            <button class="btn secondary" id="useAsCurrentBtn" type="button" disabled>Use decrypted as current</button>
-          </div>
-        </div>
-
-        <label class="mt">Paste ciphertext</label>
-        <textarea id="decIn" spellcheck="false" placeholder="Paste Base64 or Hex ciphertext here..."></textarea>
-        <div class="meta" id="decMeta"></div>
 
         <div class="divider"></div>
 

@@ -1481,7 +1481,8 @@ DOM.decryptBtn.addEventListener("click", async () => {
     DOM.decInfo.value = JSON.stringify(decryptionInfo, null, 2);
 
     DOM.decPreviewImg.removeAttribute('src');
-    DOM.decPreviewPlaceholder.style.display = 'grid';
+    DOM.decPreviewImg.style.display = 'none';
+    if (DOM.decPreviewPlaceholder) DOM.decPreviewPlaceholder.style.display = 'grid';
 
     const mime = guessMime(state.decryptedBytes);
     if (mime.startsWith('image/')) {

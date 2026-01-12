@@ -14,7 +14,7 @@
     "evaluate": "python evaluation/evaluate.py",
     "evaluate:ci": "python evaluation/evaluate.py --ci",
     "test:ui": "npx playwright test scripts/playwright --project=chromium",
-    "serve": "http-server -c-1 -o",
+    "serve": "npx http-server -c-1 -o",
     "deploy": "npm run build && git add -A && git commit -m 'Build: Minified assets' && git push origin main"
   },
   "keywords": [
@@ -29,9 +29,9 @@
   "author": "Ahmad Faour",
   "license": "MIT",
   "devDependencies": {
+    "@playwright/test": "^1.40.0",
     "clean-css": "^5.3.2",
-    "terser": "^5.20.0",
-    "@playwright/test": "^1.40.0"
+    "terser": "^5.20.0"
   },
   "engines": {
     "node": ">=14.0.0"
@@ -40,5 +40,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/yourusername/ImageCryptoLab.git"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0"
   }
 }

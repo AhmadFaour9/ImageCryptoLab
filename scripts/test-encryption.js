@@ -155,9 +155,7 @@ test('Decryption of empty data', () => {
 // Passphrase Validation Tests
 test('Passphrase validation - non-empty required', () => {
   const passphrase = '';
-  if (passphrase.trim().length === 0) {
-    throw new Error('Passphrase required');
-  }
+  
   // This should fail as expected
   let errorThrown = false;
   try {
@@ -188,9 +186,7 @@ test('Encryption input validation - non-empty data required', () => {
 
 test('Decryption input validation - ciphertext required', () => {
   const ciphertext = '';
-  if (ciphertext.trim().length === 0) {
-    throw new Error('Ciphertext required');
-  }
+  
   let errorThrown = false;
   try {
     if (ciphertext.trim().length === 0) throw new Error('Ciphertext required');
