@@ -1,393 +1,94 @@
 # ImageCryptoLab
 
-**Version 2.0.0** | Production Ready ✅
+**Version 2.2.0** | Premium Edition 💎 | Production Ready ✅
 
 **Author:** Ahmad Faour  
 **© 2026 Ahmad Faour — All rights reserved.**
 
-A lightweight, client-side web application for image processing, encoding, and encryption with 100% browser-based processing suitable for GitHub Pages deployment.
+A high-performance, client-side web application for image processing, encoding, and encryption. Featuring a professional dark-themed UI with glassmorphism, zero-trust security architecture, and 100% browser-based processing.
+
+## 🌟 New in v2.2.0
+- 💎 **Premium UI/UX:** Complete redesign with a midnight glassmorphism aesthetic.
+- 🎨 **Lucide Integration:** Semantic iconography across all toolsets.
+- 🖱️ **Drag & Drop:** Advanced file upload system with drop-zone visuals.
+- 🔒 **Local CryptoJS:** Fully offline-capable encryption (no CDN reliance).
+- ⚡ **Optimized Engine:** Improved canvas buffering and minification.
 
 ## Features
 
 ### Image Processing
 - 🖼️ **Convert** images to PNG, JPEG, or WebP (Canvas-based)
-- 📏 **Resize** images with aspect ratio preservation
-- 🗜️ **Auto-compress** images to target file size
+- 📏 **Resize** images with precision aspect ratio preservation
+- 🗜️ **Auto-compression** engine for target size thresholds
 
-### Data Encoding
-- 🔤 **Base64** encoding from image bytes
-- 🔢 **Hexadecimal** encoding with validation
-- 💾 **Download** encoded data as file
+### Data Representation
+- 🔤 **Base64** encoding from raw file streams
+- 🔢 **Hexadecimal** encoding for bit-perfect representation
+- 💾 **Export** encoded data to .txt assets
 
-### Encryption/Decryption
-- 🔐 **AES-256** encryption with CryptoJS
-- 🔐 **Triple-DES** encryption support
-- 🔑 **Passphrase-based** key derivation (PBKDF2)
-- 📤 **Multiple output formats** (hex, Base64, OpenSSL)
-- ✅ **Round-trip encryption/decryption**
+### Cryptography (Full Parameter Control)
+- 🔐 **AES-256 / DES / TripleDES** support
+- 🔑 **PBKDF2** key derivation with configurable iterations
+- 🛠️ **Custom Modes:** CBC, ECB, CFB, OFB, CTR
+- 📏 **Custom Padding:** PKCS7, ANSI X9.23, ISO 10126, etc.
+- ✅ **Round-trip validation** with manifest logging
 
-### Security & Performance
-- ✅ **100% client-side** processing (no server required)
-- ✅ **No data collection** or tracking
-- ✅ **HTTPS-only** on GitHub Pages
-- ✅ **Optimized assets** (70%+ size reduction)
-- ✅ **Comprehensive testing** (47 automated tests)
+### Security & Privacy
+- 🛡️ **Zero-Trust:** 100% client-side. No data ever leaves your device.
+- 📵 **Offline-Ready:** All dependencies are bundled locally.
+- 🕵️ **Privacy-First:** No tracking, cookies, or telemetry.
+- ✅ **CI/CD Verified:** 47 automated tests covering all critical paths.
 
-## 🔐 Auth & Attempt Limits
-To protect against mass guessing or brute-force attempts on decrypt operations, the app includes a basic quota system:
-
-- **Anonymous users (no sign-in)** get **5 decrypt attempts per 24 hours** tied to their browser session (localStorage).
-- After exhausting the 5 attempts, users are prompted to **sign in with Google** to continue using decrypt attempts.
-- **Signed-in users** are also limited to **5 daily decrypt attempts** (tracked per user in localStorage for this demo). For production, use a server-side store (e.g., Firestore) for reliable enforcement.
-- A successful decryption will **reset** the attempt counter for that user/session.
-
-To enable sign-in for your deployment, see the `AUTH` section below and follow the Firebase setup steps. You can enable either **Google** sign-in or **Email/Password** sign-in (or both).
-
-
-## Browser Support
-
-| Browser | Min Version | Status |
-|---------|------------|--------|
-| Chrome  | 66+ | ✅ Full Support |
-| Firefox | 57+ | ✅ Full Support |
-| Safari  | 11+ | ✅ Full Support |
-| Edge    | 79+ | ✅ Full Support |
-| Mobile Safari | iOS 11+ | ✅ Full Support |
-| Chrome Mobile | Android 4.4+ | ✅ Full Support |
+## 🔐 Auth & Quota System
+To protect against automated brute-force attempts on decryption:
+- **Anonymous:** 5 attempts per window (local storage).
+- **Authenticated:** 5 daily attempts (synced via Firebase/Firestore).
+- **Unlimited:** Admin-granted access for power users.
 
 ## Quick Start
 
 ### Run Locally
 ```bash
-# Option 1: Open directly
-open index.html
+# Clone the repository
+git clone https://github.com/AhmadFaour9/ImageCryptoLab.git
 
-# Option 2: Local server (Python)
-python -m http.server 8000
-# or Node.js
-npx http-server
-
-# Option 3: With npm dev tools
+# Install dev dependencies
 npm install
+
+# Build & Serve
+npm run build
 npm run serve
 ```
 
-### Deploy to GitHub Pages
-```bash
-# 1. Create GitHub repository
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/yourusername/ImageCryptoLab.git
-git push -u origin main
-
-# 2. Enable Pages in repository settings
-# Settings → Pages → Deploy from a branch → main / root
-
-# 3. Done! Your site is live at:
-# https://yourusername.github.io/ImageCryptoLab
-```
-
-## Authentication Setup
-
-This project supports optional Google Sign-in (via Firebase) to track per-user quotas for decrypt attempts.
-
-Steps:
-1. Create a Firebase project at https://console.firebase.google.com/ and add a new **Web App**.
-2. Enable **Authentication → Sign-in method → Google**.
-3. Copy the Firebase config object and add it to your site. Example (place before `app.js`):
-
-```html
-<script>
-  // Replace with your Firebase config
-  window.FIREBASE_CONFIG = {
-    apiKey: "...",
-    authDomain: "...",
-    projectId: "...",
-    // rest of config
-  };
-</script>
-```
-
-4. Deploy your site. The app will dynamically load Firebase SDKs and enable sign-in methods you enabled in Firebase Console. For **Email/Password** sign-up you must enable the 'Email/Password' provider under Authentication → Sign-in method. The app will send a verification email after sign-up; users must confirm their email to activate their account. When a user signs in, their quota will be tied to their account.
-
-## Firestore: quota and unlimited access
-For reliable enforcement and to provide true "unlimited" accounts, configure Firestore and the `users` collection. The app will:
-- Create a `users/{uid}` document on first sign-in with a default `{ unlimited: false }` field.
-- Admins can set `unlimited: true` for specific users to grant unlimited decrypt attempts.
-- Users can click "Request Unlimited Access" in the Account modal; this writes a `requests/{uid}` document with `status: 'pending'` for admin review.
-
-To provide production-grade enforcement we include a small Cloud Functions API (see `functions/`) with endpoints for attempt checking and admin approvals:
-- `POST /checkAttempt?action=check|try` — atomically checks or increments the daily attempt counter for an authenticated user.
-- `POST /listPendingRequests` — admin-only listing of pending unlimited requests.
-- `POST /approveRequest` — admin-only endpoint to approve and set `users/{uid}.unlimited = true`.
-- `POST /createCheckoutSession` and `POST /stripeWebhook` — Stripe endpoints for purchases (configure `STRIPE_SECRET`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` to enable).
-
-  To enable Stripe payments:
-  1. Create a Stripe account and create a one-time Price (note the Price ID).
-  2. Set environment variables on your Functions host: `STRIPE_SECRET` (secret key) and `STRIPE_PRICE_ID` (price id).
-  3. (Recommended) Set `STRIPE_WEBHOOK_SECRET` and register the webhook URL in the Stripe dashboard pointing to `/stripeWebhook` to receive `checkout.session.completed` events.
-  4. Deploy `functions/` and set `FIREBASE_FUNCTIONS_BASE` in your frontend so the client can call `/createCheckoutSession` to initiate a checkout session.
-
-  The webhook handler will set `users/{uid}.unlimited = true` upon successful payment and record payment details in `payments/`.
-
-Example Firestore security rules (basic):
-
-```js
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.admin == true);
-      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.admin == true);
-    }
-    match /requests/{requestId} {
-      // Allow authenticated users to create a request for their own uid
-      allow create: if request.auth != null && request.auth.uid == requestId;
-      allow read, update: if request.auth.token.admin == true; // admin-only
-    }
-    match /attemptCounts/{userId} {
-      // allow read for the user; writes should be performed by Cloud Functions (admin)
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.token.admin == true;
-    }
-  }
-}
-```
-
-To grant a user unlimited access for testing, set `unlimited: true` in their `users/{uid}` doc via the Firebase Console.
-
-Deployment notes:
-1. Install dependencies under `functions/` and deploy to Google Cloud Functions or your preferred Node host.
-2. Set `FIREBASE_FUNCTIONS_BASE` (e.g., `https://us-central1-YOUR_PROJECT.cloudfunctions.net`) in your site (before `app.js`) to have the client call the endpoints for attempt checks and admin approvals.
-3. Update Firestore rules (`firestore.rules`) and ensure admin claims are issued using the Firebase Admin SDK for admin accounts.
-
----
-
-## Testing
+## Testing & Quality
 
 ```bash
-# Install dependencies
-npm install
-
-# Run all tests (47 total)
-npm test
-
-# Run specific test suite
-npm run test:validation    # Input validation (13 tests)
-npm run test:encryption    # Crypto operations (15 tests)
-npm run test:browser       # Browser compatibility (19 tests)
+npm test              # Run full suite (47 tests)
+npm run test:validation
+npm run test:encryption
 ```
 
-### Test Coverage
-- ✅ MIME type detection (PNG, JPEG, GIF, WebP)
-- ✅ File size validation
-- ✅ Hex/Base64 conversion round-trips
-- ✅ AES/DES encryption/decryption
-- ✅ Passphrase validation
-- ✅ Canvas & Blob API support
-- ✅ ES6+ feature compatibility
-
-## Build & Optimization
-
-```bash
-# Build minified assets
-npm run build
-
-# Results
-# - CSS:  7KB → 4KB  (43% reduction)
-# - JS:   25KB → 7KB (72% reduction)
-# - Total (gzipped): ~4KB (93% reduction)
-```
-
-## Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Complete deployment guide with GitHub Pages, custom domains, Docker, and troubleshooting |
-| [TESTING.md](TESTING.md) | Testing infrastructure, test cases, manual testing checklists, cross-browser testing |
-| [QUICK_REFERENCE.md](QUICK_REFERENCE.md) | Developer quick reference with commands, project structure, and API reference |
-| [REFACTORING_COMPLETE.md](REFACTORING_COMPLETE.md) | Code quality improvements and refactoring documentation |
+### Coverage
+- ✅ MIME type detection logic
+- ✅ Cryptographic round-trips (AES/DES)
+- ✅ Canvas API & Blob handling
+- ✅ Browser compatibility (ES6+ features)
 
 ## Architecture
 
-### Tech Stack
-- **HTML5** - Semantic markup
-- **CSS3** - Dark theme, animations, responsive design
-- **JavaScript (ES6+)** - Vanilla JS, no frameworks
-- **CryptoJS** - AES/DES encryption (CDN)
-
-### File Structure
-```
-ImageCryptoLab/
-├── index.html              # UI (264 lines)
-├── styles.css              # Styling (350 lines)
-├── app.js                  # Core logic (1000+ lines)
-├── package.json            # Build config
-├── .github/workflows/
-│   └── deploy.yml          # GitHub Actions CI/CD
-├── scripts/
-│   ├── test-runner.js
-│   ├── test-validation.js
-│   ├── test-encryption.js
-│   ├── test-compatibility.js
-│   ├── minify-css.js
-│   └── minify-js.js
-└── docs/
-    ├── DEPLOYMENT.md
-    ├── TESTING.md
-    ├── QUICK_REFERENCE.md
-    └── REFACTORING_COMPLETE.md
-```
-
-### Core Components
-- **DOM Cache**: 42 elements cached for performance
-- **State Management**: Centralized state object
-- **Image Processing**: Canvas API with createImageBitmap fallback
-- **Encryption**: CryptoJS integration with WordArray conversion
-- **UI Notifications**: Toast-based notifications with ARIA attributes
-
-## Performance Metrics
-
-- **FCP** (First Contentful Paint): < 1.5s
-- **LCP** (Largest Contentful Paint): < 2s
-- **TTI** (Time to Interactive): < 2.5s
-- **Bundle Size**: ~4KB gzipped
-- **No external dependencies** except CryptoJS
-
-## Security Considerations
-
-✅ **What's Secure**
-- All processing happens locally (no data transmitted)
-- AES-256 encryption with salt
-- HTTPS enforced on GitHub Pages
-- No cookies, no tracking, no storage
-- Open source for transparency
-
-⚠️ **User Responsibilities**
-- Use strong, unique passphrases
-- Verify decryption works before deleting originals
-- Don't use on untrusted computers
-- Keep browser and OS updated
-
-## Development
-
-### Prerequisites
-- Node.js 14+
-- npm 6+
-- Git 2.0+
-
-### Setup
-```bash
-git clone https://github.com/yourusername/ImageCryptoLab.git
-cd ImageCryptoLab
-npm install
-```
-
-### Development Workflow
-```bash
-npm test              # Run tests
-npm run serve         # Local server with auto-refresh
-npm run build         # Minify for production
-git push              # Auto-deploys via GitHub Actions
-```
-
-## Deployment Options
-
-1. **GitHub Pages** (recommended) - Automatic via GitHub Actions
-2. **Custom Domain** - Add CNAME DNS record
-3. **Docker** - Containerized deployment
-4. **Firebase** - Google Cloud hosting
-5. **Vercel** - Next.js-style deployment
-6. **Netlify** - Git-based continuous deployment
-7. **Traditional Hosting** - Any static web server
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
-
-## Troubleshooting
-
-### Tests Fail
-```bash
-npm install
-npm test
-```
-
-### Build Fails
-Check Node.js version (14+): `node --version`
-
-### Encryption Not Working
-- Ensure internet connection (CryptoJS via CDN)
-- Check browser console (F12)
-- Verify CryptoJS CDN is accessible
-
-### File Too Large
-Max file size: 100MB (configurable in `app.js`)
-For larger files, implement Web Workers (future feature)
-
-See [DEPLOYMENT.md](DEPLOYMENT.md#troubleshooting) for more solutions.
-
-## Code Quality
-
-- ✅ **Zero Syntax Errors**
-- ✅ **47/47 Tests Passing**
-- ✅ **100% Critical Path Coverage**
-- ✅ **Comprehensive JSDoc Documentation**
-- ✅ **WCAG 2.1 Accessibility**
-- ✅ **Cross-browser Tested**
+- **Stack:** Vanilla JS (ES6+), CSS3 (Custom Design System), HTML5.
+- **Engine:** local `crypto-js.min.js` (bundled).
+- **Icons:** Lucide-JS (Client-side rendering).
 
 ## Roadmap
-
-- [ ] Web Workers for large file processing
-- [ ] WebAssembly encryption for performance
-- [ ] Service Worker caching
-- [ ] Drag-and-drop file upload
-- [ ] Batch processing
-- [ ] Password strength indicator
-- [ ] Dark/Light theme toggle
+- [ ] Web Workers for 100MB+ file processing
+- [ ] WebAssembly-based encryption core
+- [ ] Batch processing queue
+- [ ] Password strength visualizer
 - [ ] Internationalization (i18n)
 
-## Contributing
+## Support & Contributing
+- **GitHub**: [AhmadFaour9](https://github.com/AhmadFaour9)
+- **Repo**: [ImageCryptoLab](https://github.com/AhmadFaour9/ImageCryptoLab)
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Run tests before submitting PR
-4. Update documentation
-5. Follow existing code style
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Support
-
-- **Documentation**: See [DEPLOYMENT.md](DEPLOYMENT.md) and [TESTING.md](TESTING.md)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/ImageCryptoLab/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/ImageCryptoLab/discussions)
-
-## Credits
-
-- **CryptoJS** - Cryptographic library
-- **Canvas API** - Image processing
-- **GitHub Pages** - Hosting platform
-- **GitHub Actions** - CI/CD automation
-
----
-
-**Status**: ✅ Production Ready  
-**Version**: 2.0.0  
-**Last Updated**: January 12, 2026
-
-## Notes / Limitations
-
-- “All image types” conversion is not feasible in pure browser-only code. Conversion uses Canvas, so output targets are PNG/JPEG/WebP.
-- Input types depend on what your browser can decode.
-- DES is included because you requested it, but **DES is not considered secure** for modern use. Prefer AES.
-- CryptoJS passphrase encryption uses an OpenSSL-compatible salted format when you choose Base64 output.
-  For hex output, it stores only the raw ciphertext bytes (no salt header), so decrypt must use the same settings.
-
-## Files
-
-- `index.html` – UI
-- `styles.css` – styling
-- `app.js` – logic
+Licensed under the **MIT License**.

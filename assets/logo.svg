@@ -1,16 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="ImageCryptoLab logo">
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" fill="none">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#4F46E5" />
-      <stop offset="100%" stop-color="#06B6D4" />
+    <linearGradient id="logo-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366f1" />
+      <stop offset="1" stop-color="#06b6d4" />
     </linearGradient>
+    <filter id="glow" x="-5" y="-5" width="50" height="50" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="1.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
   </defs>
-  <rect rx="6" width="40" height="40" fill="#0f172a" />
-  <g transform="translate(4,4)">
-    <circle cx="12" cy="12" r="10" fill="url(#g)" />
-    <!-- Icon only (no text) to avoid duplicating header title -->
-    <g transform="translate(8,6) scale(0.9)">
-      <path d="M0 0 L6 0 L6 10 L0 10 Z" fill="rgba(255,255,255,0.02)" />
-    </g>
-  </g>
+  <!-- Background Shape -->
+  <rect x="2" y="2" width="36" height="36" rx="10" fill="#0f172a" stroke="url(#logo-grad)" stroke-width="1.5" />
+  
+  <!-- Optical/Image Element -->
+  <circle cx="20" cy="20" r="10" stroke="url(#logo-grad)" stroke-width="2" stroke-dasharray="4 2" />
+  
+  <!-- Security/Lock Element -->
+  <path d="M16 20C16 17.7909 17.7909 16 20 16C22.2091 16 24 17.7909 24 20C24 22.2091 22.2091 24 20 24C17.7909 24 16 22.2091 16 20Z" fill="url(#logo-grad)" />
+  <path d="M20 13V15M20 25V27M27 20H25M15 20H13M25 15L23.5 16.5M16.5 23.5L15 25M25 25L23.5 23.5M16.5 16.5L15 15" stroke="url(#logo-grad)" stroke-width="1.5" stroke-linecap="round" />
+  
+  <!-- Shield Outline -->
+  <path d="M20 6C20 6 13 8 13 14C13 23 20 28 20 28C20 28 27 23 27 14C27 8 20 6 20 6Z" stroke="white" stroke-opacity="0.2" fill="white" fill-opacity="0.05" />
 </svg>

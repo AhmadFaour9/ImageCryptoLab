@@ -1,127 +1,211 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Admin — ImageCryptoLab</title>
+  <title>Admin Dashboard — ImageCryptoLab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+
+<body class="admin-page">
+  <header class="wrap header">
+    <div class="brand">
+      <div class="logo"><img src="./assets/logo.svg" alt="logo" /></div>
+      <div>
+        <h1>Admin Control Plane</h1>
+        <p class="sub">ImageCryptoLab Management System</p>
+      </div>
+    </div>
+    <div class="pill">Secure Node Active</div>
+  </header>
+
   <main class="wrap">
     <section class="card">
-      <h2>Admin Dashboard</h2>
-      <div id="status" class="meta">Loading...</div>
-      <div id="pendingList">Checking for pending requests...</div>
+      <div class="row i-gap mb">
+        <i data-lucide="shield" class="i-md" style="color: var(--primary);"></i>
+        <h2 style="margin:0">Identity Management</h2>
+      </div>
+      <div id="status" class="meta mt">Connecting to security aggregate...</div>
+
+      <div class="divider"></div>
+
+      <div id="adminContent" style="display:none;">
+        <div class="row i-gap mb">
+          <i data-lucide="list" class="i-sm" style="color: var(--accent);"></i>
+          <h3 style="margin:0">Pending Unlimited Requests</h3>
+        </div>
+        <div id="pendingList" class="steps">Scanning requests...</div>
+      </div>
+
+      <div id="loginPrompt" style="display:none; text-align:center; padding: 40px 0;">
+        <i data-lucide="lock" class="i-lg" style="margin-bottom: 16px; opacity: 0.5;"></i>
+        <p>Administrative authentication required.</p>
+        <button class="btn i-gap mt" id="signin">
+          <i data-lucide="log-in" class="i-sm"></i> Authorize with Google
+        </button>
+      </div>
     </section>
   </main>
+
   <script>
-  async function init() {
-    if (!window.FIREBASE_CONFIG) {
-      document.getElementById('status').textContent = 'Firebase not configured - see README to set up admin flow.';
-      return;
-    }
+    // Initialize Lucide
+    lucide.createIcons();
 
-    // Use Firebase SDK if available; otherwise instruct
-    if (typeof firebase === 'undefined') {
-      const s = document.createElement('script');
-      s.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
-      document.head.appendChild(s);
-      const s2 = document.createElement('script');
-      s2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js';
-      document.head.appendChild(s2);
-      s2.onload = () => { firebase.initializeApp(window.FIREBASE_CONFIG); checkLogin(); };
-      return;
-    }
-
-    firebase.initializeApp(window.FIREBASE_CONFIG);
-    checkLogin();
-  }
-
-  async function checkLogin() {
-    firebase.auth().onAuthStateChanged(async (u) => {
-      if (!u) {
-        document.getElementById('status').innerHTML = '<button id="signin">Sign in (Google)</button>';
-        document.getElementById('signin').addEventListener('click', async () => {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          await firebase.auth().signInWithPopup(provider);
-        });
-        return;
-      }
-      const token = await u.getIdTokenResult();
-      if (!token.claims || !token.claims.admin) {
-        document.getElementById('status').textContent = 'Not an admin (admin claim required)';
+    async function init() {
+      if (!window.FIREBASE_CONFIG) {
+        document.getElementById('status').innerHTML = '<span style="color:var(--danger)">Firebase not configured. Check configuration in index.html.</span>';
         return;
       }
 
-      document.getElementById('status').textContent = `Signed in as admin: ${u.email}`;
-      loadPending();
-    });
-  }
+      if (typeof firebase === 'undefined') {
+        const scripts = [
+          'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js',
+          'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js'
+        ];
 
-  async function loadPending() {
-    document.getElementById('pendingList').textContent = 'Loading...';
-    try {
-      // Prefer calling server function if configured
-      const base = window.FIREBASE_FUNCTIONS_BASE || '';
-      const user = firebase.auth().currentUser;
-      const token = await user.getIdToken();
-      if (base) {
-        const resp = await fetch(`${base}/listPendingRequests`, {
-          method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-        });
-        const data = await resp.json();
-        if (!data.ok) throw new Error(data.error || 'Failed');
-        renderPending(data.data);
-        return;
-      }
-
-      // Fallback: call client-side helper
-      if (window._icl_fetchPendingRequests) {
-        const pending = await window._icl_fetchPendingRequests();
-        renderPending(pending);
+        for (const src of scripts) {
+          await new Promise(res => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = res;
+            document.head.appendChild(s);
+          });
+        }
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+        checkLogin();
       } else {
-        document.getElementById('pendingList').textContent = 'No server helper available.';
+        firebase.initializeApp(window.FIREBASE_CONFIG);
+        checkLogin();
       }
-    } catch (err) {
-      document.getElementById('pendingList').textContent = 'Failed to load: ' + err.message;
     }
-  }
 
-  function renderPending(list) {
-    const c = document.getElementById('pendingList');
-    if (!list || list.length === 0) { c.textContent = 'No pending requests'; return; }
-    c.textContent = '';
-    list.forEach(req => {
-      const div = document.createElement('div');
-      div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.padding = '6px 0';
-      div.innerHTML = `<div><strong>${req.uid || req.id}</strong> — ${new Date(req.requestedAt?.toDate ? req.requestedAt.toDate() : (req.requestedAt||'')).toLocaleString()}</div>`;
-      const btn = document.createElement('button'); btn.className='btn'; btn.textContent='Approve';
-      btn.addEventListener('click', async () => {
-        await approve(req.uid || req.id);
+    async function checkLogin() {
+      firebase.auth().onAuthStateChanged(async (u) => {
+        if (!u) {
+          document.getElementById('status').textContent = 'Authentication Required';
+          document.getElementById('loginPrompt').style.display = 'block';
+          document.getElementById('adminContent').style.display = 'none';
+
+          document.getElementById('signin').onclick = async () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await firebase.auth().signInWithPopup(provider);
+          };
+          return;
+        }
+
+        const token = await u.getIdTokenResult();
+        if (!token.claims || !token.claims.admin) {
+          document.getElementById('status').innerHTML = `<span style="color:var(--danger)">Access Denied: ${u.email} is not an authorized administrator.</span>`;
+          document.getElementById('loginPrompt').style.display = 'none';
+          return;
+        }
+
+        document.getElementById('status').innerHTML = `<span style="color:var(--success)">Signed in as: ${u.email}</span>`;
+        document.getElementById('loginPrompt').style.display = 'none';
+        document.getElementById('adminContent').style.display = 'block';
         loadPending();
       });
-      div.appendChild(btn);
-      c.appendChild(div);
-    });
-  }
-
-  async function approve(uid) {
-    const base = window.FIREBASE_FUNCTIONS_BASE || '';
-    const user = firebase.auth().currentUser;
-    const token = await user.getIdToken();
-    if (base) {
-      const resp = await fetch(`${base}/approveRequest`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ uid }) });
-      const data = await resp.json();
-      if (!data.ok) throw new Error(data.error || 'Approve failed');
-      alert('Approved');
-      return;
     }
-    // fallback to client helper
-    await window._icl_approveRequest(uid);
-    alert('Approved (client-side)');
-  }
 
-  init();
+    async function loadPending() {
+      const listEl = document.getElementById('pendingList');
+      listEl.innerHTML = '<div class="meta">Fetching entries...</div>';
+
+      try {
+        const base = window.FIREBASE_FUNCTIONS_BASE || '';
+        const user = firebase.auth().currentUser;
+        const token = await user.getIdToken();
+        let data;
+
+        if (base) {
+          const resp = await fetch(`${base}/listPendingRequests`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+          });
+          const json = await resp.json();
+          if (!json.ok) throw new Error(json.error || 'Fetch failed');
+          data = json.data;
+        } else if (window._icl_fetchPendingRequests) {
+          data = await window._icl_fetchPendingRequests();
+        }
+
+        renderPending(data);
+      } catch (err) {
+        listEl.innerHTML = `<div class="notice"><strong>System Error:</strong> ${err.message}</div>`;
+      }
+    }
+
+    function renderPending(list) {
+      const c = document.getElementById('pendingList');
+      if (!list || list.length === 0) {
+        c.innerHTML = '<div class="meta" style="padding: 20px 0;">No active requests found.</div>';
+        return;
+      }
+
+      c.innerHTML = '';
+      list.forEach(req => {
+        const row = document.createElement('div');
+        row.className = 'row wrapRow';
+        row.style.justifyContent = 'space-between';
+        row.style.padding = '12px 16px';
+        row.style.background = 'rgba(255,255,255,0.03)';
+        row.style.borderRadius = '8px';
+        row.style.marginBottom = '8px';
+
+        const date = new Date(req.requestedAt?.toDate ? req.requestedAt.toDate() : (req.requestedAt || '')).toLocaleString();
+
+        row.innerHTML = `
+        <div style="flex:1">
+          <div style="font-weight:600; color:var(--text-primary); font-size:14px;">${req.displayName || req.email || req.uid}</div>
+          <div class="meta" style="font-size:12px;">UID: ${req.uid || req.id} • ${date}</div>
+        </div>
+      `;
+
+        const btn = document.createElement('button');
+        btn.className = 'btn i-gap';
+        btn.innerHTML = '<i data-lucide="check" class="i-sm"></i> Approve';
+        btn.onclick = async () => {
+          btn.disabled = true;
+          btn.textContent = 'Processing...';
+          await approve(req.uid || req.id);
+          loadPending();
+        };
+
+        row.appendChild(btn);
+        c.appendChild(row);
+      });
+      lucide.createIcons();
+    }
+
+    async function approve(uid) {
+      try {
+        const base = window.FIREBASE_FUNCTIONS_BASE || '';
+        const user = firebase.auth().currentUser;
+        const token = await user.getIdToken();
+
+        if (base) {
+          const resp = await fetch(`${base}/approveRequest`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid })
+          });
+          const data = await resp.json();
+          if (!data.ok) throw new Error(data.error || 'Approve failed');
+        } else if (window._icl_approveRequest) {
+          await window._icl_approveRequest(uid);
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    init();
   </script>
 </body>
+
 </html>

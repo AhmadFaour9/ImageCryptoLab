@@ -81,7 +81,11 @@ const DOM = {
   authEmailSignIn: document.getElementById("authEmailSignIn"),
   authResendVerification: document.getElementById("authResendVerification"),
   authMessage: document.getElementById("authMessage"),
-  checkVerificationBtn: document.getElementById("checkVerificationBtn")
+  checkVerificationBtn: document.getElementById("checkVerificationBtn"),
+  dropZone: document.getElementById("dropZone"),
+  dropZoneProxy: document.getElementById("dropZoneProxy"),
+  adminPreview: document.getElementById("adminPreview"),
+  adminList: document.getElementById("adminList")
 };
 
 // State
@@ -185,15 +189,15 @@ function setFileState(file, bytes) {
     if (bytes.length > MAX_FILE_SIZE) {
       throw new Error(`File size exceeds 100MB limit.`);
     }
-    
+
     state.currentFile = file;
     state.currentBytes = bytes;
     state.currentMime = file.type || guessMime(bytes);
     state.currentName = file.name || 'image';
-    
+
     setPreviewFromBytes(bytes);
     DOM.fileMeta.textContent = `${state.currentName} (${(bytes.length / 1024).toFixed(2)}KB)`;
-    
+
     // Enable all buttons
     DOM.downloadOriginalBtn.disabled = false;
     DOM.convertBtn.disabled = false;
@@ -201,7 +205,7 @@ function setFileState(file, bytes) {
     DOM.makeHexBtn.disabled = false;
     DOM.encryptBtn.disabled = false;
     DOM.applyResizeBtn.disabled = false;
-    
+
     showNotification(`Loaded: ${state.currentName}`, 'success', 2000);
   } catch (err) {
     showNotification(`Error: ${err.message}`, 'error');
@@ -212,7 +216,7 @@ function setPreviewFromBytes(bytes) {
   const mime = guessMime(bytes);
   const blob = new Blob([bytes], { type: mime });
   const url = URL.createObjectURL(blob);
-  
+
   if (mime.startsWith('image/')) {
     DOM.previewImg.src = url;
     DOM.previewPlaceholder.style.display = 'none';
@@ -230,17 +234,33 @@ function clearState() {
   state.currentName = null;
   state.decryptedBytes = null;
   state.decryptedMime = null;
-  
+
   if (state.decryptedObjectURL) {
     URL.revokeObjectURL(state.decryptedObjectURL);
     state.decryptedObjectURL = null;
   }
-  
+
   DOM.previewImg.removeAttribute('src');
-  DOM.previewPlaceholder.style.display = 'grid';
-  DOM.previewPlaceholder.textContent = 'No image selected';
-  DOM.fileMeta.textContent = '';
-  
+  DOM.previewImg.style.display = 'none';
+  if (DOM.previewPlaceholder) {
+    DOM.previewPlaceholder.style.display = 'grid';
+    DOM.previewPlaceholder.textContent = 'No image selected';
+  }
+  DOM.fileMeta.textContent = 'No file selected';
+
+  // Clear inputs
+  DOM.resizeW.value = "";
+  DOM.resizeH.value = "";
+  DOM.encPass.value = "";
+  DOM.decPass.value = "";
+  DOM.encOut.value = "";
+  DOM.decIn.value = "";
+  DOM.encInfo.value = "";
+  DOM.decInfo.value = "";
+  DOM.encodeOut.value = "";
+  DOM.maxSize.value = "500";
+  DOM.autoCompress.checked = false;
+
   // Disable all action buttons
   DOM.downloadOriginalBtn.disabled = true;
   DOM.convertBtn.disabled = true;
@@ -248,11 +268,12 @@ function clearState() {
   DOM.makeHexBtn.disabled = true;
   DOM.encryptBtn.disabled = true;
   DOM.applyResizeBtn.disabled = true;
-  
-  // Clear outputs
-  DOM.encodeOut.value = '';
-  DOM.encOut.value = '';
-  DOM.decIn.value = '';
+  DOM.copyEncBtn.disabled = true;
+  DOM.downloadEncBtn.disabled = true;
+  DOM.downloadDecBtn.disabled = true;
+  DOM.useAsCurrentBtn.disabled = true;
+  DOM.copyEncodeBtn.disabled = true;
+  DOM.downloadEncodeBtn.disabled = true;
 }
 
 function bytesToWordArray(bytes) {
@@ -644,8 +665,8 @@ async function showAccountModal() {
         DOM.adminList.innerHTML = '';
         pending.forEach(req => {
           const row = document.createElement('div');
-          row.style.display = 'flex'; row.style.justifyContent = 'space-between'; row.style.gap='8px'; row.style.alignItems='center'; row.style.padding='6px 0';
-          row.innerHTML = `<div style="flex:1"><strong>${req.uid || req.id}</strong> — requested at ${new Date(req.requestedAt?.toDate ? req.requestedAt.toDate() : (req.requestedAt||'')).toLocaleString()}</div>`;
+          row.style.display = 'flex'; row.style.justifyContent = 'space-between'; row.style.gap = '8px'; row.style.alignItems = 'center'; row.style.padding = '6px 0';
+          row.innerHTML = `<div style="flex:1"><strong>${req.uid || req.id}</strong> — requested at ${new Date(req.requestedAt?.toDate ? req.requestedAt.toDate() : (req.requestedAt || '')).toLocaleString()}</div>`;
           const btn = document.createElement('button');
           btn.className = 'btn';
           btn.textContent = 'Approve';
@@ -885,6 +906,14 @@ window.addEventListener('resize', () => layoutResponsive());
 DOM.fileInput.addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
+  _handleFile(file);
+});
+
+async function _handleFile(file) {
+  if (file.size > MAX_FILE_SIZE) {
+    showNotification("File too large (max 100MB)", 'error');
+    return;
+  }
   try {
     state.isProcessing = true;
     const buf = await file.arrayBuffer();
@@ -895,7 +924,42 @@ DOM.fileInput.addEventListener("change", async (e) => {
   } finally {
     state.isProcessing = false;
   }
-});
+}
+
+// Drag & Drop Handlers
+if (DOM.dropZone) {
+  DOM.dropZone.addEventListener("click", () => DOM.fileInput.click());
+
+  ["dragenter", "dragover", "dragleave", "drop"].forEach(name => {
+    DOM.dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  });
+
+  ["dragenter", "dragover"].forEach(name => {
+    DOM.dropZone.addEventListener(name, () => DOM.dropZone.classList.add("drag-over"));
+  });
+
+  ["dragleave", "drop"].forEach(name => {
+    DOM.dropZone.addEventListener(name, () => DOM.dropZone.classList.remove("drag-over"));
+  });
+
+  DOM.dropZone.addEventListener("drop", (e) => {
+    const file = e.dataTransfer.files?.[0];
+    if (file) _handleFile(file);
+  });
+}
+
+if (DOM.dropZoneProxy) {
+  DOM.dropZoneProxy.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) _handleFile(file);
+  });
+  DOM.dropZoneProxy.addEventListener("dragover", (e) => e.preventDefault());
+}
+
 
 DOM.clearBtn.addEventListener("click", () => {
   DOM.fileInput.value = "";
@@ -993,7 +1057,7 @@ DOM.outQuality.addEventListener("input", () => {
 
 async function convertAndDownload() {
   if (!state.currentBytes) return;
-  
+
   const targetMime = DOM.outFormat.value;
   const q = Number(DOM.outQuality.value);
   const wIn = DOM.resizeW.value ? Number(DOM.resizeW.value) : null;
@@ -1003,10 +1067,10 @@ async function convertAndDownload() {
     // Load image
     const blob = new Blob([state.currentBytes], { type: state.currentMime });
     const url = URL.createObjectURL(blob);
-    
+
     const img = new Image();
     img.crossOrigin = "anonymous";
-    
+
     await new Promise((res, rej) => {
       img.onload = res;
       img.onerror = () => rej(new Error("Failed to load image"));
@@ -1016,7 +1080,7 @@ async function convertAndDownload() {
     // Calculate dimensions
     let outW = img.naturalWidth;
     let outH = img.naturalHeight;
-    
+
     if (wIn && hIn) {
       outW = wIn;
       outH = hIn;
@@ -1053,7 +1117,7 @@ async function convertAndDownload() {
     const ext = targetMime === "image/png" ? "png" : targetMime === "image/jpeg" ? "jpg" : "webp";
     const baseName = (state.currentName || "image").replace(/\.[^.]+$/, "");
     downloadBlob(outputBlob, `${baseName}.${ext}`);
-    
+
     URL.revokeObjectURL(url);
   } catch (err) {
     throw err;
@@ -1080,20 +1144,20 @@ DOM.convertBtn.addEventListener("click", async () => {
 DOM.applyResizeBtn.addEventListener("click", async () => {
   if (state.isProcessing || !state.currentBytes) return;
   DOM.applyResizeBtn.disabled = true;
-  
+
   try {
     state.isProcessing = true;
     const wIn = DOM.resizeW.value ? Number(DOM.resizeW.value) : null;
     const hIn = DOM.resizeH.value ? Number(DOM.resizeH.value) : null;
-    
+
     if (!wIn && !hIn) throw new Error("Enter width or height to resize.");
 
     const blob = new Blob([state.currentBytes], { type: state.currentMime });
     const url = URL.createObjectURL(blob);
-    
+
     const img = new Image();
     img.crossOrigin = "anonymous";
-    
+
     await new Promise((res, rej) => {
       img.onload = res;
       img.onerror = () => rej(new Error("Failed to load image"));
@@ -1103,7 +1167,7 @@ DOM.applyResizeBtn.addEventListener("click", async () => {
     // Calculate dimensions
     let outW = img.naturalWidth;
     let outH = img.naturalHeight;
-    
+
     if (wIn && hIn) {
       outW = wIn;
       outH = hIn;
@@ -1138,7 +1202,7 @@ DOM.applyResizeBtn.addEventListener("click", async () => {
     const buf = await resizedBlob.arrayBuffer();
     const bytes = new Uint8Array(buf);
     const resizedName = (state.currentName || "image").replace(/\.[^.]+$/, "") + "_resized.png";
-    
+
     setFileState({ name: resizedName, type: "image/png" }, bytes);
     URL.revokeObjectURL(url);
     showNotification("Image resized successfully!", 'success');
@@ -1461,8 +1525,7 @@ DOM.decryptBtn.addEventListener("click", async () => {
       throw new Error('Decryption failed - check passphrase, algorithm, and mode/padding settings');
     }
 
-    // Try to preview the decrypted data
-    setPreviewFromBytes(state.decryptedBytes);
+    // Successfully decrypted: results will be shown in the bottom Decrypted Preview area
 
     // Display decryption info
     const decryptionInfo = {
@@ -1482,17 +1545,24 @@ DOM.decryptBtn.addEventListener("click", async () => {
 
     DOM.decPreviewImg.removeAttribute('src');
     DOM.decPreviewImg.style.display = 'none';
-    if (DOM.decPreviewPlaceholder) DOM.decPreviewPlaceholder.style.display = 'grid';
+    if (DOM.decPreviewPlaceholder) {
+      DOM.decPreviewPlaceholder.style.display = 'grid';
+      DOM.decPreviewPlaceholder.textContent = 'Processing output...';
+    }
 
     const mime = guessMime(state.decryptedBytes);
     if (mime.startsWith('image/')) {
       const blob = new Blob([state.decryptedBytes], { type: mime });
       const url = URL.createObjectURL(blob);
       DOM.decPreviewImg.src = url;
-      DOM.decPreviewPlaceholder.style.display = 'none';
+      DOM.decPreviewImg.style.display = 'block';
+      if (DOM.decPreviewPlaceholder) DOM.decPreviewPlaceholder.style.display = 'none';
       state.decryptedObjectURL = url;
     } else {
-      DOM.decPreviewPlaceholder.textContent = `Decrypted data (${mime}) - ${state.decryptedBytes.length} bytes`;
+      if (DOM.decPreviewPlaceholder) {
+        DOM.decPreviewPlaceholder.style.display = 'grid';
+        DOM.decPreviewPlaceholder.textContent = `Decrypted data (${mime}) - ${state.decryptedBytes.length} bytes`;
+      }
     }
 
     DOM.decMeta.textContent = `Decrypted: ${state.decryptedBytes.length} bytes | Format: ${mime}`;
@@ -1609,6 +1679,11 @@ document.querySelectorAll('.tab').forEach(tabBtn => {
     const panel = document.getElementById(`panel-${tabName}`);
     if (panel) {
       panel.classList.add('show');
+    }
+
+    // Refresh Lucide icons if any were in panels
+    if (window.lucide) {
+      lucide.createIcons();
     }
   });
 });

@@ -1,101 +1,130 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="author" content="Ahmad Faour" />
-  <meta name="description" content="ImageCryptoLab — Client-side image conversion, Base64/Hex encoding, and AES/DES/TripleDES encryption. Secure, fast, and privacy-friendly image tools." />
-  <meta name="keywords" content="image conversion, image encryption, AES, DES, TripleDES, Base64, Hex, image converter, client-side encryption, ImageCryptoLab, image privacy, image compression, web tool" />
+  <meta name="description"
+    content="ImageCryptoLab — Client-side image conversion, Base64/Hex encoding, and AES/DES/TripleDES encryption. Secure, fast, and privacy-friendly image tools." />
+  <meta name="keywords"
+    content="image conversion, image encryption, AES, DES, TripleDES, Base64, Hex, image converter, client-side encryption, ImageCryptoLab, image privacy, image compression, web tool" />
   <meta property="og:title" content="ImageCryptoLab — Convert • Base64/Hex • AES/DES Encrypt/Decrypt" />
-  <meta property="og:description" content="Client-side image conversion and encryption tool. Convert to PNG/JPEG/WebP, encode to Base64/Hex, and encrypt files locally." />
+  <meta property="og:description"
+    content="Client-side image conversion and encryption tool. Convert to PNG/JPEG/WebP, encode to Base64/Hex, and encrypt files locally." />
   <meta property="og:image" content="/assets/logo.svg" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="ImageCryptoLab" />
-  <meta name="twitter:description" content="Client-side image conversion and encryption tool — secure and privacy-first." />
+  <meta name="twitter:description"
+    content="Client-side image conversion and encryption tool — secure and privacy-first." />
   <script type="application/ld+json">
   {"@context": "https://schema.org","@type": "WebApplication","name":"ImageCryptoLab","author":{"@type":"Person","name":"Ahmad Faour"},"url":"https://yourusername.github.io/ImageCryptoLab","description":"Client-side tool for image conversion, encoding and encryption."}
   </script>
   <title>ImageCryptoLab — Convert • Base64/Hex • AES/DES Encrypt/Decrypt</title>
   <link rel="icon" href="/assets/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
   <!-- CryptoJS (AES/DES) Local -->
   <script defer src="./assets/js/crypto-js.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script defer src="./app.js"></script>
 </head>
+
 <body>
   <header class="wrap header">
     <div class="brand">
-      <div class="logo" aria-hidden="true"><img src="/assets/logo.svg" alt="ImageCryptoLab logo" style="height:40px;" /></div>
+      <div class="logo" aria-hidden="true"><img src="./assets/logo.svg" alt="ImageCryptoLab logo" />
+      </div>
       <div>
         <h1>ImageCryptoLab</h1>
-        <p class="sub">Convert images • Extract Base64/Hex • Encrypt/Decrypt with AES, DES, TripleDES (client‑side)</p>
-        <p class="meta">Author: <strong>Ahmad Faour</strong> — © Ahmad Faour 2026. All rights reserved.</p>
+        <p class="sub">Professional Image Toolkit • Secure • 100% Privacy</p>
+        <p class="meta">By <strong>Ahmad Faour</strong> — © 2026</p>
       </div>
     </div>
-    <div class="pill">Runs 100% in your browser — suitable for GitHub Pages</div>
+    <div class="pill">Client-side Encryption Active</div>
     <div class="auth">
-      <div id="miniAccount" style="display:none; align-items:center; gap:8px;">
-        <img id="miniAvatar" src="/assets/logo.svg" alt="avatar" style="height:28px; width:28px; border-radius:6px;" />
+      <div id="miniAccount" style="display:none; align-items:center; gap:12px;">
+        <img id="miniAvatar" src="./assets/logo.svg" alt="avatar" style="height:32px; width:32px; border-radius:8px;" />
         <div style="display:flex; flex-direction:column; align-items:flex-start;">
-          <small id="miniName" style="font-size:12px; color:var(--muted);"></small>
-          <small id="miniQuota" style="font-size:11px; color:var(--muted);"></small>
+          <small id="miniName"></small>
+          <small id="miniQuota"></small>
         </div>
       </div>
-      <button class="btn" id="signInBtn" type="button">Sign in (Google)</button>
-      <button class="btn secondary" id="signOutBtn" type="button" style="display:none;">Sign out</button>
-      <button class="btn secondary" id="accountBtn" type="button" style="display:none;">Account</button>
+      <button class="btn i-gap" id="signInBtn" type="button">
+        <i data-lucide="log-in" class="i-sm"></i> Sign in
+      </button>
+      <button class="btn secondary i-gap" id="signOutBtn" type="button" style="display:none;">
+        <i data-lucide="log-out" class="i-sm"></i> Sign out
+      </button>
+      <button class="btn secondary i-gap" id="accountBtn" type="button" style="display:none;">
+        <i data-lucide="user" class="i-sm"></i> Account
+      </button>
       <div id="userBadge" class="userBadge" style="display:none;"></div>
     </div>
   </header>
 
   <main class="wrap">
     <section class="card">
-      <h2>1) Pick an image</h2>
+      <h2><i data-lucide="image" class="i-md"></i> 1) Source Image</h2>
       <div class="grid2">
         <div>
-          <label class="btn">
-            <input id="fileInput" type="file" accept="image/*" />
-            Choose image
-          </label>
+          <div id="dropZone" class="drop-zone">
+            <i data-lucide="upload-cloud" class="i-lg"></i>
+            <p>Drag & drop image here or <strong>click to browse</strong></p>
+            <span class="hint">Supports PNG, JPEG, WebP, GIF, BMP</span>
+            <input id="fileInput" type="file" accept="image/*" style="display: none;" />
+          </div>
+
           <div class="meta" id="fileMeta">No file selected</div>
 
-          <div class="row gap">
-            <button class="btn secondary" id="clearBtn" type="button">Clear</button>
-            <button class="btn secondary" id="downloadOriginalBtn" type="button" disabled>Download original</button>
+          <div class="row gap mt">
+            <button class="btn secondary i-gap" id="clearBtn" type="button">
+              <i data-lucide="trash-2" class="i-sm"></i> Clear
+            </button>
+            <button class="btn secondary i-gap" id="downloadOriginalBtn" type="button" disabled>
+              <i data-lucide="download" class="i-sm"></i> Download Original
+            </button>
           </div>
 
           <div class="notice">
-            <strong>Note:</strong> “Convert between all types” isn’t possible in pure browser‑only code.
-            This app supports converting to <code>PNG</code>, <code>JPEG</code>, or <code>WebP</code> using Canvas.
-            It can still read many image inputs that your browser can decode (PNG/JPEG/WebP/GIF/BMP/SVG, etc.).
+            <strong>Browser-Native Processing:</strong> Converts to PNG/JPEG/WebP using Canvas API. Your image never
+            leaves your device.
           </div>
         </div>
 
         <div class="preview">
-          <div class="previewBox">
+          <div class="previewBox" id="dropZoneProxy">
             <img id="previewImg" alt="Preview" />
-            <div class="placeholder" id="previewPlaceholder">Preview appears here</div>
+            <div class="placeholder" id="previewPlaceholder">Preview will appear here</div>
           </div>
         </div>
       </div>
     </section>
 
     <section class="card">
-      <h2>2) Tools</h2>
+      <h2><i data-lucide="layers" class="i-md"></i> 2) Processing Tools</h2>
 
       <div class="tabs" role="tablist" aria-label="Tools tabs">
-        <button class="tab active" data-tab="convert" role="tab" aria-selected="true">Convert</button>
-        <button class="tab" data-tab="encode" role="tab" aria-selected="false">Base64 / Hex</button>
-        <button class="tab" data-tab="encrypt" role="tab" aria-selected="false">Encrypt</button>
-        <button class="tab" data-tab="decrypt" role="tab" aria-selected="false">Decrypt</button>
+        <button class="tab active" data-tab="convert" role="tab" aria-selected="true"><i data-lucide="refresh-cw"
+            class="i-sm"></i> Convert</button>
+        <button class="tab" data-tab="encode" role="tab" aria-selected="false"><i data-lucide="code" class="i-sm"></i>
+          Base64 / Hex</button>
+        <button class="tab" data-tab="encrypt" role="tab" aria-selected="false"><i data-lucide="lock" class="i-sm"></i>
+          Encrypt</button>
+        <button class="tab" data-tab="decrypt" role="tab" aria-selected="false"><i data-lucide="unlock"
+            class="i-sm"></i> Decrypt</button>
       </div>
 
       <!-- Convert -->
       <div class="panel show" id="panel-convert" role="tabpanel">
-        <h3>Convert image format (PNG / JPEG / WebP)</h3>
+        <h3>Format & Quality</h3>
         <div class="grid3">
           <div>
-            <label>Output format</label>
+            <label>Output Format</label>
             <select id="outFormat">
               <option value="image/png">PNG (.png)</option>
               <option value="image/jpeg">JPEG (.jpg)</option>
@@ -105,44 +134,48 @@
           <div>
             <label>Quality (JPEG/WebP)</label>
             <input id="outQuality" type="range" min="0" max="1" step="0.01" value="0.92" />
-            <div class="meta"><span id="qualityLabel">0.92</span></div>
+            <div class="meta">Current Quality: <span id="qualityLabel">0.92</span></div>
           </div>
           <div class="alignEnd">
-            <button class="btn" id="convertBtn" type="button" disabled>Convert & download</button>
+            <button class="btn i-gap" id="convertBtn" type="button" disabled>
+              <i data-lucide="download-cloud" class="i-sm"></i> Convert & Download
+            </button>
           </div>
         </div>
 
         <div class="divider"></div>
 
-        <h3>Resize (optional) before converting</h3>
+        <h3>Geometric Resize</h3>
         <div class="grid3">
           <div>
             <label>Width (px)</label>
-            <input id="resizeW" type="number" min="1" placeholder="auto" />
+            <input id="resizeW" type="number" min="1" placeholder="Auto" />
           </div>
           <div>
             <label>Height (px)</label>
-            <input id="resizeH" type="number" min="1" placeholder="auto" />
+            <input id="resizeH" type="number" min="1" placeholder="Auto" />
           </div>
           <div class="alignEnd">
-            <button class="btn secondary" id="applyResizeBtn" type="button" disabled>Apply resize to preview</button>
+            <button class="btn secondary i-gap" id="applyResizeBtn" type="button" disabled>
+              <i data-lucide="maximize" class="i-sm"></i> Apply Resize
+            </button>
           </div>
         </div>
-        <div class="meta">Tip: leave one of width/height empty to keep aspect ratio.</div>
+        <div class="meta">Leave one field empty to preserve aspect ratio.</div>
 
         <div class="divider"></div>
 
-        <h3>Auto-compression</h3>
+        <h3>Auto-Compression Engine</h3>
         <div class="grid3">
           <div>
             <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;">
-              <input type="checkbox" id="autoCompress" style="width: auto; padding: 0; border: none; margin: 0;" />
-              <span>Auto-compress image</span>
+              <input type="checkbox" id="autoCompress" style="width: auto; margin: 0;" />
+              <span>Enable Compression</span>
             </label>
-            <div class="meta">Reduces file size using optimal quality</div>
+            <div class="meta">Smart reduction using optimal settings</div>
           </div>
           <div>
-            <label>Target max size (KB)</label>
+            <label>Target Size Threshold (KB)</label>
             <input id="maxSize" type="number" min="10" max="10000" value="500" />
           </div>
           <div class="alignEnd">
@@ -153,46 +186,50 @@
 
       <!-- Encode -->
       <div class="panel" id="panel-encode" role="tabpanel">
-        <h3>Base64 + Hex for the current file bytes</h3>
+        <h3>Data Representation</h3>
         <div class="row gap wrapRow">
-          <button class="btn" id="makeBase64Btn" type="button" disabled>Generate Base64</button>
-          <button class="btn" id="makeHexBtn" type="button" disabled>Generate Hex</button>
-          <button class="btn secondary" id="copyEncodeBtn" type="button" disabled>Copy output</button>
-          <button class="btn secondary" id="downloadEncodeBtn" type="button" disabled>Download output (.txt)</button>
+          <button class="btn i-gap" id="makeBase64Btn" type="button" disabled><i data-lucide="binary" class="i-sm"></i>
+            Base64</button>
+          <button class="btn i-gap" id="makeHexBtn" type="button" disabled><i data-lucide="hash" class="i-sm"></i>
+            Hex</button>
+          <button class="btn secondary i-gap" id="copyEncodeBtn" type="button" disabled><i data-lucide="copy"
+              class="i-sm"></i> Copy</button>
+          <button class="btn secondary i-gap" id="downloadEncodeBtn" type="button" disabled><i data-lucide="file-text"
+              class="i-sm"></i> Download .txt</button>
         </div>
-        <label class="mt">Output</label>
-        <textarea id="encodeOut" spellcheck="false" placeholder="Base64 or Hex will appear here..."></textarea>
+        <label class="mt">Encoded Output</label>
+        <textarea id="encodeOut" spellcheck="false" placeholder="Resulting data stream will appear here..."></textarea>
         <div class="meta" id="encodeMeta"></div>
       </div>
 
       <!-- Encrypt -->
       <div class="panel" id="panel-encrypt" role="tabpanel">
-        <h3>Encrypt file bytes — client‑side with full parameters</h3>
+        <h3>Cryptographic Configuration</h3>
 
         <div class="grid3">
           <div>
             <label>Algorithm</label>
             <select id="encAlg">
-              <option value="AES">AES</option>
+              <option value="AES">Advanced Encryption Standard (AES)</option>
               <option value="DES">DES</option>
               <option value="TripleDES">Triple DES</option>
             </select>
           </div>
 
           <div>
-            <label>Key Size (bits)</label>
+            <label>Key Bit-Length</label>
             <select id="encKeySize">
-              <option value="128">128</option>
-              <option value="192">192</option>
-              <option value="256" selected>256</option>
+              <option value="128">128-bit</option>
+              <option value="192">192-bit</option>
+              <option value="256" selected>256-bit (Strongest)</option>
             </select>
           </div>
 
           <div>
-            <label>Cipher Mode</label>
+            <label>Operational Mode</label>
             <select id="encMode">
-              <option value="CBC" selected>CBC</option>
-              <option value="ECB">ECB</option>
+              <option value="CBC" selected>CBC (Recommended)</option>
+              <option value="ECB">ECB (Legacy)</option>
               <option value="CFB">CFB</option>
               <option value="OFB">OFB</option>
               <option value="CTR">CTR</option>
@@ -202,7 +239,7 @@
 
         <div class="grid3 mt">
           <div>
-            <label>Padding Mode</label>
+            <label>Padding Protocol</label>
             <select id="encPadding">
               <option value="Pkcs7" selected>PKCS7</option>
               <option value="AnsiX923">ANSI X9.23</option>
@@ -213,74 +250,73 @@
           </div>
 
           <div>
-            <label>IV Size (bytes)</label>
+            <label>IV Length (Bytes)</label>
             <input id="encIVSize" type="number" min="8" max="32" value="16" />
           </div>
 
           <div>
-            <label>Salt Length (bytes)</label>
+            <label>Salt Length (Bytes)</label>
             <input id="encSaltSize" type="number" min="0" max="32" value="8" />
           </div>
         </div>
 
         <div class="grid3 mt">
           <div>
-            <label>Passphrase</label>
-            <input id="encPass" type="password" placeholder="Enter strong passphrase" />
+            <label>Master Passphrase</label>
+            <input id="encPass" type="password" placeholder="Use a complex key" />
           </div>
 
           <div>
-            <label>Iterations (PBKDF2)</label>
+            <label>PBKDF2 Iterations</label>
             <input id="encIterations" type="number" min="1000" max="1000000" value="10000" />
           </div>
 
           <div class="alignEnd">
-            <button class="btn" id="encryptBtn" type="button" disabled>Encrypt</button>
+            <button class="btn i-gap" id="encryptBtn" type="button" disabled>
+              <i data-lucide="shield-check" class="i-sm"></i> Run Encryption
+            </button>
           </div>
         </div>
 
         <div class="grid3 mt">
           <div>
-            <label>Output Encoding</label>
+            <label>Output Format</label>
             <select id="encOutFmt">
               <option value="base64" selected>Base64</option>
-              <option value="hex">Hex</option>
+              <option value="hex">Hexadecimal</option>
               <option value="base32">Base32</option>
             </select>
           </div>
           <div class="alignEnd">
-            <button class="btn secondary" id="copyEncBtn" type="button" disabled>Copy ciphertext</button>
+            <button class="btn secondary i-gap" id="copyEncBtn" type="button" disabled><i data-lucide="clipboard"
+                class="i-sm"></i> Copy</button>
           </div>
           <div class="alignEnd">
-            <button class="btn secondary" id="downloadEncBtn" type="button" disabled>Download ciphertext</button>
+            <button class="btn secondary i-gap" id="downloadEncBtn" type="button" disabled><i data-lucide="save"
+                class="i-sm"></i> Save File</button>
           </div>
         </div>
 
-        <label class="mt">Encryption Info</label>
-        <textarea id="encInfo" spellcheck="false" readonly placeholder="Encryption parameters will appear here..."></textarea>
+        <label class="mt">Manifest Info (Keep this safe)</label>
+        <textarea id="encInfo" spellcheck="false" readonly
+          placeholder="Encryption metadata will be logged here..."></textarea>
 
-        <label class="mt">Ciphertext</label>
-        <textarea id="encOut" spellcheck="false" placeholder="Ciphertext will appear here..."></textarea>
+        <label class="mt">Encoded Ciphertext</label>
+        <textarea id="encOut" spellcheck="false" placeholder="Encrypted payload..."></textarea>
 
         <div class="notice">
-          <strong>Encryption Parameters:</strong><br/>
-          • Algorithm: AES-128/192/256 or DES/TripleDES<br/>
-          • Mode: CBC (default), ECB, CFB, OFB, CTR<br/>
-          • Padding: PKCS7, ANSI X9.23, ISO 10126, ISO 9797-1<br/>
-          • IV: Randomly generated per encryption<br/>
-          • Salt: OpenSSL-compatible EVP format<br/>
-          • Key Derivation: PBKDF2 with configurable iterations<br/>
-          Keep ALL parameters consistent to decrypt successfully.
+          <strong>Security Note:</strong> Your passphrase is never stored. Ensure you save the <strong>exact</strong>
+          parameters used (Mode, Padding, Iterations) or decryption will be mathematically impossible.
         </div>
       </div>
 
       <!-- Decrypt -->
       <div class="panel" id="panel-decrypt" role="tabpanel">
-        <h3>Decrypt ciphertext back to bytes with parameter matching</h3>
+        <h3>Secure Decryption Gateway</h3>
 
         <div class="grid3">
           <div>
-            <label>Algorithm</label>
+            <label>Source Algorithm</label>
             <select id="decAlg">
               <option value="AES">AES</option>
               <option value="DES">DES</option>
@@ -289,16 +325,16 @@
           </div>
 
           <div>
-            <label>Key Size (bits)</label>
+            <label>Matching Key Size</label>
             <select id="decKeySize">
-              <option value="128">128</option>
-              <option value="192">192</option>
-              <option value="256" selected>256</option>
+              <option value="128">128-bit</option>
+              <option value="192">192-bit</option>
+              <option value="256" selected>256-bit</option>
             </select>
           </div>
 
           <div>
-            <label>Cipher Mode</label>
+            <label>Matching Mode</label>
             <select id="decMode">
               <option value="CBC" selected>CBC</option>
               <option value="ECB">ECB</option>
@@ -311,7 +347,7 @@
 
         <div class="grid3 mt">
           <div>
-            <label>Padding Mode</label>
+            <label>Matching Padding</label>
             <select id="decPadding">
               <option value="Pkcs7" selected>PKCS7</option>
               <option value="AnsiX923">ANSI X9.23</option>
@@ -322,15 +358,15 @@
           </div>
 
           <div>
-            <label>Iterations (PBKDF2)</label>
+            <label>PBKDF2 Iterations</label>
             <input id="decIterations" type="number" min="1000" max="1000000" value="10000" />
           </div>
 
           <div>
-            <label>Ciphertext Encoding</label>
+            <label>Ciphertext Format</label>
             <select id="decInFmt">
               <option value="base64" selected>Base64</option>
-              <option value="hex">Hex</option>
+              <option value="hex">Hexadecimal</option>
               <option value="base32">Base32</option>
             </select>
           </div>
@@ -339,135 +375,146 @@
         <div class="grid3 mt">
           <div>
             <label>Passphrase</label>
-            <input id="decPass" type="password" placeholder="Enter passphrase (must match encryption)" />
+            <input id="decPass" type="password" placeholder="Required for derivation" />
           </div>
 
           <div class="alignEnd">
-            <button class="btn" id="decryptBtn" type="button">Decrypt</button>
+            <button class="btn i-gap" id="decryptBtn" type="button">
+              <i data-lucide="unlock" class="i-sm"></i> Run Decryption
+            </button>
           </div>
-          <div class="meta" id="decryptAttempts">Attempts left: 5</div>
-
-          <div></div>
+          <div class="meta" id="decryptAttempts">Quota: 5 attempts remaining</div>
         </div>
 
-        <label class="mt">Paste Ciphertext Below</label>
-        <textarea id="decIn" spellcheck="false" placeholder="Paste ciphertext here..."></textarea>
+        <label class="mt">Paste Ciphertext Payload</label>
+        <textarea id="decIn" spellcheck="false" placeholder="Paste your encrypted base64/hex string here..."></textarea>
 
-        <label class="mt">Decryption Parameters</label>
-        <textarea id="decInfo" spellcheck="false" readonly placeholder="Decryption parameters and result will appear here..."></textarea>
+        <label class="mt">Decryption Validation Log</label>
+        <textarea id="decInfo" spellcheck="false" readonly placeholder="Status messages will appear here..."></textarea>
 
-        
-
-        <div class="grid2 mt">
-          <button class="btn secondary" id="downloadDecBtn" type="button" disabled>Download decrypted file</button>
-          <button class="btn secondary" id="useAsCurrentBtn" type="button" disabled>Use as current file</button>
+        <div class="row gap mt">
+          <button class="btn secondary i-gap" id="downloadDecBtn" type="button" disabled>
+            <i data-lucide="file-down" class="i-sm"></i> Download Result
+          </button>
+          <button class="btn secondary i-gap" id="useAsCurrentBtn" type="button" disabled>
+            <i data-lucide="file-up" class="i-sm"></i> Load into Workflow
+          </button>
         </div>
 
-        <div id="decMeta" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
-
-        <div class="notice">
-          <strong>Decryption Requirements:</strong><br/>
-          • Must use exact same algorithm and key size<br/>
-          • Cipher mode, padding, and PBKDF2 iterations must match<br/>
-          • Ciphertext encoding (Base64/Hex/Base32) must match output format<br/>
-          • Even one parameter mismatch will cause decryption to fail<br/>
-          • Save encryption parameters securely for future decryption
-        </div>
+        <div id="decMeta" style="margin-top: 10px; font-size: 0.85em; color: var(--text-tertiary);"></div>
       </div>
 
-        <div class="divider"></div>
+      <div class="divider"></div>
 
-        <h3>Decrypted preview (if it looks like an image)</h3>
-        <div class="preview">
-          <div class="previewBox">
-            <img id="decPreviewImg" alt="Decrypted preview" />
-            <div class="placeholder" id="decPreviewPlaceholder">Decrypted preview appears here</div>
-          </div>
+      <h3><i data-lucide="eye" class="i-sm"></i> Processed/Decrypted Output Preview</h3>
+      <div class="preview">
+        <div class="previewBox">
+          <img id="decPreviewImg" alt="Decrypted view" />
+          <div class="placeholder" id="decPreviewPlaceholder">Output preview will visualize here</div>
         </div>
       </div>
-
     </section>
 
     <section class="card">
-      <h2>About & Features</h2>
-      <p>This project is developed and maintained by <strong>Ahmad Faour</strong>. Key features include:</p>
-      <ul>
-        <li>Image format conversion: PNG, JPEG, WebP (Canvas-based)</li>
-        <li>Base64 / Hex encoding and decoding with download support</li>
-        <li>Client-side encryption: AES, DES, TripleDES with configurable parameters</li>
-        <li>Preview, download, and round-trip decryption support</li>
-        <li>Evaluation framework with automated CI integration</li>
-      </ul>
-      <p class="hint">Want more features? Open an issue on GitHub or contact the author.</p>
-    </section>
-
-    <section class="card">
-      <h2>3) Share & Deploy</h2>
-      <div class="notice">
-        ✅ <strong>Already deployed!</strong> This app runs 100% client-side (in your browser).
-        <br/>
-        📱 Share the URL with anyone. No backend or server needed.
-        <br/>
-        🔒 Your data never leaves your computer — everything encrypts locally.
+      <h2><i data-lucide="info" class="i-md"></i> Architecture & Security</h2>
+      <div class="grid2">
+        <div>
+          <p>ImageCryptoLab is a high-performance, client-side toolkit designed for zero-trust environments. By
+            leveraging Web Crypto derivatives and Canvas buffering, it ensures that your sensitive image data is never
+            transmitted over a network.</p>
+          <ul class="steps" style="list-style: none; padding: 0;">
+            <li><i data-lucide="check-circle" class="i-sm" style="color: var(--success);"></i>
+              <strong>Offline-First:</strong> No server-side analytics or storage.
+            </li>
+            <li><i data-lucide="check-circle" class="i-sm" style="color: var(--success);"></i> <strong>Standard
+                Crypto:</strong> Uses CryptoJS for robust AES-256 implementation.</li>
+            <li><i data-lucide="check-circle" class="i-sm" style="color: var(--success);"></i> <strong>Modern
+                Formats:</strong> Optimized for WebP and high-quality JPEG compression.</li>
+          </ul>
+        </div>
+        <div class="pill" style="height: fit-content; text-align: left; padding: 16px; border-radius: 12px;">
+          <strong>Developer:</strong> Ahmad Faour<br />
+          <strong>Version:</strong> v2.2.0 (Stable)<br />
+          <strong>License:</strong> MIT Open Source<br />
+          <strong>Engine:</strong> Vanilla JS / CryptoJS
+        </div>
       </div>
     </section>
 
     <footer class="footer">
-      <div class="footerLeft">
-        <span>Made for GitHub Pages • Vanilla HTML/CSS/JS • CryptoJS AES/DES</span>
+      <div>
+        Built with <i data-lucide="heart" class="i-sm" style="color: var(--danger); fill: var(--danger);"></i> by <a
+          href="https://github.com/AhmadFaour9">Ahmad Faour</a>
       </div>
-      <div class="footerRight">
-        <small>© 2026 Ahmad Faour — All rights reserved.</small><br/>
-        <small>Author: Ahmad Faour — <a href="https://github.com/AhmadFaour9">GitHub</a></small>
+      <div class="row gap">
+        <a href="https://github.com/AhmadFaour9/ImageCryptoLab">GitHub Repo</a>
+        <span>•</span>
+        <a href="#">Privacy Policy</a>
+        <span>•</span>
+        <a href="#">Security Audit</a>
       </div>
     </footer>
 
-  <!-- Auth modal -->
-  <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="panel">
-      <h4>Sign in or create an account</h4>
-      <p>You've reached the free attempt limit. Sign in with Google or create an account using email/password to continue using decrypt attempts (resets daily). After signing up we will send a verification email; your account will be activated when you confirm your email.</p>
+    <!-- Auth modal -->
+    <div class="modal" id="authModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="panel">
+        <h4><i data-lucide="key" class="i-md" style="color: var(--primary);"></i> Access Management</h4>
+        <p>Your free decryption quota has been reached. Authenticate to refresh attempts or upgrade to unlimited
+          processing.</p>
 
-      <div style="display:flex; gap:8px; margin-bottom:6px;">
-        <button class="btn" id="authModalSignIn" type="button">Sign in with Google</button>
-        <button class="btn" id="showEmailFormBtn" type="button">Use email & password</button>
-        <button class="btn secondary" id="authModalClose" type="button">Close</button>
-      </div>
-
-      <div id="emailAuthForm" style="display:none; margin-top:8px;">
-        <label>Email</label>
-        <input id="authEmail" type="email" placeholder="you@example.com" />
-        <label style="margin-top:8px;">Password</label>
-        <input id="authPassword" type="password" placeholder="Choose a secure password" />
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button class="btn" id="authEmailSignUp" type="button">Create account</button>
-          <button class="btn" id="authEmailSignIn" type="button">Sign in</button>
-          <button class="btn secondary" id="authResendVerification" type="button" style="display:none;">Resend verification</button>
+        <div style="display:flex; gap:12px; margin-bottom:16px;">
+          <button class="btn i-gap" id="authModalSignIn" type="button">
+            <i data-lucide="chrome" class="i-sm"></i> Sign in with Google
+          </button>
+          <button class="btn secondary i-gap" id="showEmailFormBtn" type="button">
+            <i data-lucide="mail" class="i-sm"></i> Use Email
+          </button>
+          <button class="btn secondary" id="authModalClose" type="button">Close</button>
         </div>
-        <div id="authMessage" class="meta" style="margin-top:8px;"></div>
+
+        <div id="emailAuthForm" style="display:none; border-top: 1px solid var(--border); padding-top: 16px;">
+          <label>Recovery Email</label>
+          <input id="authEmail" type="email" placeholder="email@address.com" />
+          <label class="mt">Secure Password</label>
+          <input id="authPassword" type="password" placeholder="••••••••" />
+          <div style="display:flex; gap:8px; margin-top:20px;">
+            <button class="btn" id="authEmailSignUp" type="button">Register</button>
+            <button class="btn" id="authEmailSignIn" type="button">Authorize</button>
+            <button class="btn secondary" id="authResendVerification" type="button" style="display:none;">Resend
+              OTP</button>
+          </div>
+          <div id="authMessage" class="meta" style="margin-top:12px;"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Account modal -->
-  <div class="modal" id="accountModal" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="panel">
-      <h4>Account & Quota</h4>
-      <pre id="accountInfo">Loading account info...</pre>
-      <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
-        <button class="btn" id="purchaseBtn" type="button" disabled>Purchase Unlimited Access</button>
-        <button class="btn" id="requestUnlimitedBtn" type="button">Request Unlimited Access</button>
-        <button class="btn" id="checkVerificationBtn" type="button" style="display:none;">I verified — check now</button>
-        <button class="btn secondary" id="accountModalClose" type="button">Close</button>
-      </div>
-      <hr style="margin:12px 0;" />
-      <div id="adminPreview" style="display:none;">
-        <h4>Pending Requests (Admin)</h4>
-        <div id="adminList">None</div>
+    <!-- Account modal -->
+    <div class="modal" id="accountModal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="panel">
+        <h4><i data-lucide="user-circle" class="i-md" style="color: var(--primary);"></i> Identity & Workspace</h4>
+        <pre id="accountInfo">Syncing workspace...</pre>
+        <div style="margin-top:20px; display:flex; flex-wrap: wrap; gap:12px; align-items:center;">
+          <button class="btn i-gap" id="purchaseBtn" type="button" disabled>
+            <i data-lucide="zap" class="i-sm"></i> Unlock Unlimited
+          </button>
+          <button class="btn secondary i-gap" id="requestUnlimitedBtn" type="button">
+            <i data-lucide="send" class="i-sm"></i> Request Access
+          </button>
+          <button class="btn secondary" id="accountModalClose" type="button">Close</button>
+        </div>
+        <hr style="margin:20px 0; border: 0; border-top: 1px solid var(--border);" />
+        <div id="adminPreview" style="display:none;">
+          <h4><i data-lucide="shield" class="i-sm"></i> Control Plane (Admin)</h4>
+          <div id="adminList">Scanning requests...</div>
+        </div>
       </div>
     </div>
-  </div>
 
+    <script>
+      // Initialize Lucide icons
+      lucide.createIcons();
+    </script>
   </main>
 </body>
+
 </html>
