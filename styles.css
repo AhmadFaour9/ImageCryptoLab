@@ -81,9 +81,13 @@ body{
   background: linear-gradient(135deg, rgba(122,162,255,.25), rgba(121,242,192,.18));
   border: 1px solid rgba(122,162,255,.22);
   transition: var(--transition);
-  font-size: 22px;
+  font-size: 0; /* prevent fallback text from showing */
+  line-height: 0;
+  overflow: hidden;
   box-shadow: 0 0 12px rgba(122,162,255,.15);
 }
+
+.logo img { display:block; max-height:28px; width:auto; }
 
 .logo:hover {
   border-color: rgba(122,162,255,.45);
