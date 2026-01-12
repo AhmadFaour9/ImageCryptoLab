@@ -156,6 +156,12 @@ function guessMime(bytes) {
     bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
     return "image/webp";
   }
+  if (bytes.length >= 2 && bytes[0] === 0x42 && bytes[1] === 0x4D) {
+    return "image/bmp";
+  }
+  if (bytes.length >= 4 && bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x01 && bytes[3] === 0x00) {
+    return "image/x-icon";
+  }
   return "application/octet-stream";
 }
 
@@ -1114,7 +1120,15 @@ async function convertAndDownload() {
     });
 
     // Download
-    const ext = targetMime === "image/png" ? "png" : targetMime === "image/jpeg" ? "jpg" : "webp";
+    const extMap = {
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/webp": "webp",
+      "image/gif": "gif",
+      "image/bmp": "bmp",
+      "image/x-icon": "ico"
+    };
+    const ext = extMap[targetMime] || "bin";
     const baseName = (state.currentName || "image").replace(/\.[^.]+$/, "");
     downloadBlob(outputBlob, `${baseName}.${ext}`);
 
