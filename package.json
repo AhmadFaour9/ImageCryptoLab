@@ -11,6 +11,8 @@
     "test:encryption": "node scripts/test-encryption.js",
     "test:validation": "node scripts/test-validation.js",
     "test:browser": "node scripts/test-compatibility.js",
+    "evaluate": "python evaluation/evaluate.py",
+    "evaluate:ci": "python evaluation/evaluate.py --ci",
     "serve": "http-server -c-1 -o",
     "deploy": "npm run build && git add -A && git commit -m 'Build: Minified assets' && git push origin main"
   },

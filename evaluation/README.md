@@ -198,6 +198,36 @@ The evaluation uses 20 test cases in `test_dataset.jsonl`:
 ### Run Full Evaluation
 
 ```bash
+# From repository root
+npm run evaluate
+
+# Or directly
+cd evaluation && python evaluate.py
+```
+
+---
+
+## ⚙️ CI Integration (GitHub Actions)
+
+You can run the evaluation automatically on push and pull requests using the included GitHub Actions workflow located at `.github/workflows/evaluation.yml`.
+
+Key points:
+- The workflow runs `python evaluation/evaluate.py` on `push` and `pull_request` events.
+- It uploads `evaluation_results.json` as an artifact for inspection.
+- The job will fail if the overall pass rate is below 80% (the script exits with non-zero code).
+
+To enable CI:
+1. Commit and push the workflow file (already included in this repo).
+2. Ensure GitHub Actions are enabled on your repository.
+3. Optionally, adjust the evaluation threshold inside `evaluation/evaluate.py` if you want a different pass rate for failure.
+
+---
+
+## ✅ Quick Troubleshooting
+
+- If the workflow fails due to missing Python dependencies, add a `requirements.txt` to the repo or modify the workflow to install required packages.
+- Retrieve the `evaluation_results.json` artifact from the failed job for details on failing tests.
+
 python evaluate.py
 ```
 
