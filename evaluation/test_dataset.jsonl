@@ -1,0 +1,25 @@
+# ImageCryptoLab Evaluation Test Dataset
+# Each line is a separate test case in JSON format
+
+{"test_id": "enc_001", "test_type": "encryption", "algorithm": "AES", "passphrase": "SecurePass123!", "test_data": "Hello World", "expected_behavior": "Should successfully encrypt and decrypt returning original data"}
+{"test_id": "enc_002", "test_type": "encryption", "algorithm": "DES", "passphrase": "Pass456", "test_data": "Image encryption test", "expected_behavior": "Should support Triple-DES encryption"}
+{"test_id": "enc_003", "test_type": "encryption", "algorithm": "AES", "passphrase": "Key!@#$%^&*()", "test_data": "Special chars & symbols", "expected_behavior": "Should handle special characters in passphrase"}
+{"test_id": "enc_004", "test_type": "encryption_roundtrip", "algorithm": "AES", "passphrase": "TestPass", "format": "base64", "expected_behavior": "Encrypt then decrypt should restore original"}
+{"test_id": "enc_005", "test_type": "encryption_roundtrip", "algorithm": "AES", "passphrase": "TestPass", "format": "hex", "expected_behavior": "Hex format round-trip should work"}
+{"test_id": "img_001", "test_type": "image_conversion", "source_format": "png", "target_format": "jpeg", "expected_behavior": "Should convert PNG to JPEG"}
+{"test_id": "img_002", "test_type": "image_conversion", "source_format": "jpeg", "target_format": "webp", "expected_behavior": "Should convert JPEG to WebP"}
+{"test_id": "img_003", "test_type": "image_conversion", "source_format": "any", "target_format": "png", "expected_behavior": "Should convert any image to PNG"}
+{"test_id": "img_004", "test_type": "image_resize", "operation": "resize_w", "width": 200, "expected_behavior": "Should resize to width 200 maintaining aspect ratio"}
+{"test_id": "img_005", "test_type": "image_resize", "operation": "resize_h", "height": 150, "expected_behavior": "Should resize to height 150 maintaining aspect ratio"}
+{"test_id": "img_006", "test_type": "image_resize", "operation": "resize_wh", "width": 300, "height": 200, "expected_behavior": "Should resize to exact dimensions"}
+{"test_id": "enc_006", "test_type": "encoding", "format": "base64", "test_data": "Sample image bytes", "expected_behavior": "Should generate valid Base64 string"}
+{"test_id": "enc_007", "test_type": "encoding", "format": "hex", "test_data": "Sample image bytes", "expected_behavior": "Should generate valid Hexadecimal string"}
+{"test_id": "ui_001", "test_type": "ui_functionality", "action": "file_upload", "expected_behavior": "Should accept image file upload and show preview"}
+{"test_id": "ui_002", "test_type": "ui_functionality", "action": "tab_switch", "tab_names": ["Convert", "Base64 / Hex", "Encrypt", "Decrypt"], "expected_behavior": "All tabs should be clickable and switch panels"}
+{"test_id": "ui_003", "test_type": "ui_functionality", "action": "button_enable", "button_names": ["makeBase64Btn", "makeHexBtn", "encryptBtn", "convertBtn"], "expected_behavior": "Buttons should be enabled after file upload"}
+{"test_id": "ui_004", "test_type": "ui_functionality", "action": "error_handling", "scenario": "invalid_file", "expected_behavior": "Should show appropriate error message"}
+{"test_id": "ui_005", "test_type": "ui_functionality", "action": "error_handling", "scenario": "oversized_file", "expected_behavior": "Should reject files over 100MB"}
+{"test_id": "dec_001", "test_type": "decryption", "algorithm": "AES", "passphrase": "TestPass", "has_correct_pass": true, "expected_behavior": "Should decrypt with correct passphrase"}
+{"test_id": "dec_002", "test_type": "decryption", "algorithm": "AES", "passphrase": "WrongPass", "has_correct_pass": false, "expected_behavior": "Should fail or show error with wrong passphrase"}
+{"test_id": "perf_001", "test_type": "performance", "metric": "load_time", "expected_behavior": "Page should load in under 3 seconds"}
+{"test_id": "perf_002", "test_type": "performance", "metric": "conversion_speed", "file_size_mb": 10, "expected_behavior": "Should convert 10MB image in under 5 seconds"}
