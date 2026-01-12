@@ -5,6 +5,7 @@
  */
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
+let db; // Global database instance
 
 // DOM Cache
 const DOM = {
@@ -461,7 +462,7 @@ async function initAuthIfAvailable() {
     }
 
     firebase.initializeApp(window.FIREBASE_CONFIG);
-    const db = firebase.firestore();
+    db = firebase.firestore();
 
     // Helper to fetch/create user doc
     async function fetchUserDoc(uid) {
@@ -540,16 +541,27 @@ async function initAuthIfAvailable() {
 }
 
 async function signInWithGoogle() {
+  if (window.location.protocol === 'file:') {
+    showNotification('Auth requires a web server. Please run "npm run serve" and access via localhost.', 'warning', 5000);
+    return;
+  }
   if (typeof firebase === 'undefined') {
-    showNotification('Auth is not configured. See README for setup.', 'warning');
+    showNotification('Firebase SDK not loaded. Ensure FIREBASE_CONFIG is set in index.html.', 'warning', 5000);
     return;
   }
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
     await firebase.auth().signInWithPopup(provider);
     showNotification('Signed in successfully', 'success');
   } catch (err) {
-    showNotification(`Sign-in failed: ${err.message}`, 'error');
+    if (err.code === 'auth/popup-blocked') {
+      showNotification('Sign-in popup blocked by browser. Please allow popups.', 'error');
+    } else {
+      showNotification(`Sign-in failed: ${err.message}`, 'error');
+      console.error('Google Sign-in Error:', err);
+    }
   }
 }
 
