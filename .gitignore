@@ -1,7 +1,8 @@
 node_modules/
 dist/
-*.min.css
-*.min.js
+/styles.min.css
+/app.min.js
+!assets/js/*.min.js
 .DS_Store
 .env
 firebase-local.js
